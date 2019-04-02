@@ -5,3 +5,20 @@ authors = ["Albrecht Weiche <uodnk@student.kit.edu>", "Arthur Anselm <ukdxw@stud
 edition = "2018"
 
 [dependencies]
+cortex-m = "0.5.2"
+cortex-m-rt = "0.6.4"
+cortex-m-semihosting = "0.3.0"
+alloc-cortex-m = "0.3.4"
+
+[patch.crates-io.cortex-m-rt]
+git = "https://github.com/rust-embedded/cortex-m-rt.git"
+
+[dependencies.stm32f7-discovery]
+git = "https://github.com/embed-rs/stm32f7-discovery.git"
+
+[dependencies.stm32f7]
+version = "0.3.2"
+features = ["stm32f7x6", "rt"]
+
+[profile.release]
+lto = true

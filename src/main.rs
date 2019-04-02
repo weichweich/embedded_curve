@@ -22,6 +22,7 @@ use stm32f7_discovery::{
     system_clock::{self, Hz},
     lcd,
     lcd::Color,
+    touch,
 };
 
 const HEAP_SIZE: usize = 50 * 1024; // in bytes
@@ -81,18 +82,38 @@ fn main() -> ! {
 
     println!("Hello World");
 
-    // turn led on
-    pins.led.set(true);
+    // // turn led on
+    // pins.led.set(true);
 
-    let mut last_led_toggle = system_clock::ticks();
+    // let mut last_led_toggle = system_clock::ticks();
+    // loop {
+    //     let ticks = system_clock::ticks();
+    //     // every 0.5 seconds (we have 20 ticks per second)
+    //     if ticks - last_led_toggle >= 10 {
+    //         pins.led.toggle();
+    //         last_led_toggle = ticks;
+    //     }
+    // }
+
+
+    let mut i2c_3 = init::init_i2c_3(peripherals.I2C3, &mut rcc);
+    i2c_3.test_1();
+    i2c_3.test_2();
+    // touch initialization should be done after audio initialization, because the touch
+    // controller might not be ready yet
+    touch::check_family_id(&mut i2c_3).unwrap();
+
     loop {
-        let ticks = system_clock::ticks();
-        // every 0.5 seconds (we have 20 ticks per second)
-        if ticks - last_led_toggle >= 10 {
-            pins.led.toggle();
-            last_led_toggle = ticks;
+        // poll for new touch data
+        for touch in &touch::touches(&mut i2c_3).unwrap() {
+            layer_1.print_point_color_at(
+                touch.x as usize,
+                touch.y as usize,
+                Color::from_hex(0xffff00),
+            );
         }
-    }
+    } 
+    
 }
 
 #[global_allocator]
@@ -124,3 +145,41 @@ fn panic(info: &PanicInfo) -> ! {
 
     loop {}
 }
+
+// struct TouchTask<S, F>
+// where
+//     S: Stream<Item = ()>,
+//     F: Framebuffer,
+// {
+//     touch_int_stream: S,
+//     i2c_3_mutex: Arc<FutureMutex<I2C<device::I2C3>>>,
+//     layer_mutex: Arc<FutureMutex<Layer<F>>>,
+// }
+
+// impl<S, F> TouchTask<S, F>
+// where
+//     S: Stream<Item = ()>,
+//     F: Framebuffer,
+// {
+//     async fn run(self) {
+//         let Self {
+//             touch_int_stream,
+//             i2c_3_mutex,
+//             layer_mutex,
+//         } = self;
+//         pin_mut!(touch_int_stream);
+//         await!(layer_mutex.with(|l| l.clear()));
+//         loop {
+//             await!(touch_int_stream.next()).expect("touch channel closed");
+//             let touches = await!(i2c_3_mutex.with(|i2c_3| touch::touches(i2c_3))).unwrap();
+//             await!(layer_mutex.with(|layer| for touch in touches {
+//                 layer.print_point_color_at(
+//                     touch.x as usize,
+//                     touch.y as usize,
+//                     Color::from_hex(0xffff00),
+//                 );
+//             }))
+//         }
+//     }
+// }
+

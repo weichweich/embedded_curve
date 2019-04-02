@@ -1,6 +1,8 @@
 #![no_std]
 #![no_main]
 #![feature(alloc_error_handler)]
+#![feature(alloc)]
+#![feature(lang_items)]
 
 extern crate alloc_cortex_m;
 extern crate cortex_m;
@@ -11,6 +13,8 @@ extern crate stm32f7;
 #[macro_use]
 extern crate stm32f7_discovery;
 
+mod curve;
+
 use alloc_cortex_m::CortexMHeap;
 use core::alloc::Layout as AllocLayout;
 use core::panic::PanicInfo;
@@ -20,9 +24,11 @@ use stm32f7_discovery::{
     gpio::{GpioPort, OutputPin},
     init,
     system_clock::{self, Hz},
-    lcd,
-    lcd::Color,
+    lcd::{self, Color, WIDTH, HEIGHT},
     touch,
+};
+use curve::{
+    Curve, CurveField, Point, draw_line,
 };
 
 const HEAP_SIZE: usize = 50 * 1024; // in bytes
@@ -59,7 +65,7 @@ fn main() -> ! {
     );
 
     // configure the systick timer 20Hz (20 ticks per second)
-    init::init_systick(Hz(20), &mut systick, &rcc);
+    init::init_systick(Hz(100), &mut systick, &rcc);
     systick.enable_interrupt();
 
     init::init_sdram(&mut rcc, &mut fmc);
@@ -82,19 +88,7 @@ fn main() -> ! {
 
     println!("Hello World");
 
-    // // turn led on
-    // pins.led.set(true);
-
-    // let mut last_led_toggle = system_clock::ticks();
-    // loop {
-    //     let ticks = system_clock::ticks();
-    //     // every 0.5 seconds (we have 20 ticks per second)
-    //     if ticks - last_led_toggle >= 10 {
-    //         pins.led.toggle();
-    //         last_led_toggle = ticks;
-    //     }
-    // }
-
+    let mut curve = Curve::new();
 
     let mut i2c_3 = init::init_i2c_3(peripherals.I2C3, &mut rcc);
     i2c_3.test_1();
@@ -103,14 +97,35 @@ fn main() -> ! {
     // controller might not be ready yet
     touch::check_family_id(&mut i2c_3).unwrap();
 
+    let mut last_curve_update = system_clock::ticks();
+    let mut counter = 0;
+    let mut last_p_opt = None;
     loop {
         // poll for new touch data
+        let ticks = system_clock::ticks();
         for touch in &touch::touches(&mut i2c_3).unwrap() {
             layer_1.print_point_color_at(
                 touch.x as usize,
                 touch.y as usize,
                 Color::from_hex(0xffff00),
             );
+        }
+
+        if ticks - last_curve_update >= 100 {
+            let p = Point {
+                x: WIDTH /2 + (counter % 50), 
+                y: HEIGHT /2 + (counter % 50),
+            };
+            // layer_1.print_point_color_at(p.x, p.y, Color::from_hex(0xffff00));
+            // curve.add_point(p, &mut layer_1, Color::from_hex(0xffff00));
+            match last_p_opt {
+                None => {},
+                Some(last_p) => draw_line(&p, &last_p, &mut layer_1, Color::from_hex(0xffff00)),
+            };
+
+            last_p_opt = Some(p);
+            last_curve_update = ticks;
+            counter += 1;
         }
     } 
     
@@ -145,41 +160,3 @@ fn panic(info: &PanicInfo) -> ! {
 
     loop {}
 }
-
-// struct TouchTask<S, F>
-// where
-//     S: Stream<Item = ()>,
-//     F: Framebuffer,
-// {
-//     touch_int_stream: S,
-//     i2c_3_mutex: Arc<FutureMutex<I2C<device::I2C3>>>,
-//     layer_mutex: Arc<FutureMutex<Layer<F>>>,
-// }
-
-// impl<S, F> TouchTask<S, F>
-// where
-//     S: Stream<Item = ()>,
-//     F: Framebuffer,
-// {
-//     async fn run(self) {
-//         let Self {
-//             touch_int_stream,
-//             i2c_3_mutex,
-//             layer_mutex,
-//         } = self;
-//         pin_mut!(touch_int_stream);
-//         await!(layer_mutex.with(|l| l.clear()));
-//         loop {
-//             await!(touch_int_stream.next()).expect("touch channel closed");
-//             let touches = await!(i2c_3_mutex.with(|i2c_3| touch::touches(i2c_3))).unwrap();
-//             await!(layer_mutex.with(|layer| for touch in touches {
-//                 layer.print_point_color_at(
-//                     touch.x as usize,
-//                     touch.y as usize,
-//                     Color::from_hex(0xffff00),
-//                 );
-//             }))
-//         }
-//     }
-// }
-

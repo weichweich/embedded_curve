@@ -59,7 +59,7 @@ fn main() -> ! {
     loop {
         let ticks = system_clock::ticks();
         // every 0.5 seconds (we have 20 ticks per second)
-        if ticks - last_led_toggle >= 10 {
+        if ticks - last_led_toggle >= 2 {
             pins.led.toggle();
             last_led_toggle = ticks;
         }

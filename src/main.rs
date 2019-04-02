@@ -6,7 +6,9 @@ extern crate alloc_cortex_m;
 extern crate cortex_m;
 extern crate cortex_m_rt as rt;
 extern crate cortex_m_semihosting;
+#[macro_use]
 extern crate stm32f7;
+#[macro_use]
 extern crate stm32f7_discovery;
 
 use alloc_cortex_m::CortexMHeap;
@@ -18,7 +20,11 @@ use stm32f7_discovery::{
     gpio::{GpioPort, OutputPin},
     init,
     system_clock::{self, Hz},
+    lcd,
+    lcd::Color,
 };
+
+const HEAP_SIZE: usize = 50 * 1024; // in bytes
 
 #[entry]
 fn main() -> ! {
@@ -29,9 +35,12 @@ fn main() -> ! {
     let mut rcc = peripherals.RCC;
     let mut pwr = peripherals.PWR;
     let mut flash = peripherals.FLASH;
+    let mut fmc = peripherals.FMC;
+    let mut ltdc = peripherals.LTDC;
 
     init::init_system_clock_216mhz(&mut rcc, &mut pwr, &mut flash);
     init::enable_gpio_ports(&mut rcc);
+    init::enable_syscfg(&mut rcc);
 
     let gpio_a = GpioPort::new(peripherals.GPIOA);
     let gpio_b = GpioPort::new(peripherals.GPIOB);
@@ -52,6 +61,26 @@ fn main() -> ! {
     init::init_systick(Hz(20), &mut systick, &rcc);
     systick.enable_interrupt();
 
+    init::init_sdram(&mut rcc, &mut fmc);
+    let mut lcd = init::init_lcd(&mut ltdc, &mut rcc);
+    pins.display_enable.set(true);
+    pins.backlight.set(true);
+
+    // Initialize the allocator BEFORE you use it
+    unsafe { ALLOCATOR.init(rt::heap_start() as usize, HEAP_SIZE) }
+
+    lcd.set_background_color(Color::from_hex(0x001000));
+    let mut layer_1 = lcd.layer_1().unwrap();
+    let mut layer_2 = lcd.layer_2().unwrap();
+
+    layer_2.clear();
+    layer_1.clear();
+
+    // Make `println` print to the LCD
+    lcd::init_stdout(layer_2);
+
+    println!("Hello World");
+
     // turn led on
     pins.led.set(true);
 
@@ -59,7 +88,7 @@ fn main() -> ! {
     loop {
         let ticks = system_clock::ticks();
         // every 0.5 seconds (we have 20 ticks per second)
-        if ticks - last_led_toggle >= 2 {
+        if ticks - last_led_toggle >= 10 {
             pins.led.toggle();
             last_led_toggle = ticks;
         }

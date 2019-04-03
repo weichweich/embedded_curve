@@ -4,6 +4,7 @@
 #![feature(alloc)]
 #![feature(lang_items)]
 
+extern crate alloc;
 extern crate alloc_cortex_m;
 extern crate cortex_m;
 extern crate cortex_m_rt as rt;
@@ -15,8 +16,11 @@ extern crate stm32f7_discovery;
 
 mod curve;
 pub mod geometry;
+pub mod input;
+pub mod display;
 
 use libm;
+use alloc::vec::Vec;
 use alloc_cortex_m::CortexMHeap;
 use core::alloc::Layout as AllocLayout;
 use core::panic::PanicInfo;
@@ -29,12 +33,20 @@ use stm32f7_discovery::{
     lcd::{self, Color, WIDTH, HEIGHT},
     touch,
 };
+use embedded_graphics::prelude::*;
+use embedded_graphics::Drawing;
+use embedded_graphics::coord::Coord;
+use embedded_graphics::primitives::{Circle, Rect};
 use curve::{
-    Curve, CurveField, draw_line,
+    Curve, CurveField, draw_line
 };
 use geometry::{
-    Point
+    Point, AABBox
 };
+use input::{
+    Player, PlayerInput
+};
+use display::LcdDisplay;
 
 const HEAP_SIZE: usize = 50 * 1024; // in bytes
 
@@ -93,8 +105,6 @@ fn main() -> ! {
 
     println!("Hello World");
 
-    let mut curve = Curve::new();
-
     let mut i2c_3 = init::init_i2c_3(peripherals.I2C3, &mut rcc);
     i2c_3.test_1();
     i2c_3.test_2();
@@ -102,44 +112,47 @@ fn main() -> ! {
     // controller might not be ready yet
     touch::check_family_id(&mut i2c_3).unwrap();
 
-    draw_line(Point{
-        x:0, y:0
-    }, Point {
-        x: 100, y: 100
-    }, &mut layer_1, Color::from_hex(0xffff00));
+    let mut display = LcdDisplay::new(&mut layer_1);
 
-    let mut last_curve_update = system_clock::ticks();
-    let mut counter = 0;
-    let mid = Point {
-        x: WIDTH /2, 
-        y: HEIGHT /2,
-    };
-    let mut opt_last_point = None;
+    let top_left = Point { x: 0, y: 0};
+    let top_mid = Point { x: WIDTH/ 2, y: 0};
+    let bottom_left = Point { x: 0, y: HEIGHT};
+    let mid_mid = Point { x: WIDTH / 2, y: HEIGHT / 2};
+    let bottom_mid = Point { x: WIDTH / 2, y: HEIGHT};
+    let bottom_right = Point { x: WIDTH, y: HEIGHT};
+    let left_mid = Point { x: 0, y: HEIGHT / 2 };
+    let right_mid = Point { x: WIDTH, y: HEIGHT / 2 };
+
+    let mut player_a = Player::new(
+        AABBox::new(top_left, mid_mid), 
+        AABBox::new(left_mid, bottom_mid));
+    let mut player_b = Player::new(
+        AABBox::new(top_mid, right_mid), 
+        AABBox::new(mid_mid, bottom_right));
+
     loop {
         // poll for new touch data
         let ticks = system_clock::ticks();
+        let mut touches: Vec<Point> = Vec::new();
         for touch in &touch::touches(&mut i2c_3).unwrap() {
-            layer_1.print_point_color_at(
-                touch.x as usize,
-                touch.y as usize,
-                Color::from_hex(0xffff00),
-            );
+            touches.push(Point{x: touch.x as usize, y: touch.y as usize});
         }
 
-        if ticks - last_curve_update >= 10 {
-            let p = Point {
-                x: ((WIDTH as i32) /2 + ((libm::sinf(counter as f32)*100.0) as i32)) as usize, 
-                y: ((HEIGHT as i32) /2 + ((libm::cosf(counter as f32)*100.0) as i32)) as usize,
-            };
-
-            match opt_last_point {
-                None => {},
-                Some(last_p) => draw_line(p, last_p, &mut layer_1, Color::from_hex(0xffff00)),
-            }
-            opt_last_point = Some(p);
-            last_curve_update = ticks;
-            counter += 1;
+        match player_a.get_player_input(&touches) {
+            PlayerInput::None => {},
+            PlayerInput::Left => println!("A left"),
+            PlayerInput::Right => println!("A right"),
+            PlayerInput::Both => println!("A both"),
         }
+        match player_b.get_player_input(&touches) {
+            PlayerInput::None => {},
+            PlayerInput::Left => println!("B left"),
+            PlayerInput::Right => println!("B right"),
+            PlayerInput::Both => println!("B both"),
+        }
+
+        player_a.draw(&mut display);
+        player_a.act();
     }
 }
 

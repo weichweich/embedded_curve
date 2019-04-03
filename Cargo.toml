@@ -11,6 +11,7 @@ cortex-m-semihosting = "0.3.0"
 alloc-cortex-m = "0.3.4"
 libm = "0.1.2"
 bresenham = "*"
+embedded-graphics = "0.4.7"
 
 [patch.crates-io.cortex-m-rt]
 git = "https://github.com/rust-embedded/cortex-m-rt.git"

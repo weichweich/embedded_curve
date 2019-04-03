@@ -1,4 +1,5 @@
 use core::ops::Add;
+use core::ops::Sub;
 
 #[derive(Copy,Clone)]
 pub struct Vector2D {
@@ -19,6 +20,28 @@ impl Add for Point {
         Point {
             x: self.x + other.x,
             y: self.y + other.y,
+        }
+    }
+}
+
+impl Add for Vector2D {
+    type Output = Vector2D;
+
+    fn add(self, other: Vector2D) -> Vector2D {
+        Vector2D {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
+    }
+}
+
+impl Sub for Vector2D {
+    type Output = Vector2D;
+
+    fn sub(self, other: Vector2D) -> Vector2D {
+        Vector2D {
+            x: self.x - other.x,
+            y: self.y - other.y,
         }
     }
 }

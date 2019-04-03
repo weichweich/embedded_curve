@@ -18,6 +18,7 @@ mod curve;
 pub mod geometry;
 pub mod input;
 pub mod display;
+pub mod draw;
 
 use libm;
 use alloc::vec::Vec;
@@ -38,10 +39,16 @@ use embedded_graphics::Drawing;
 use embedded_graphics::coord::Coord;
 use embedded_graphics::primitives::{Circle, Rect};
 use curve::{
-    Curve, CurveField, draw_line
+    Curve, CurveField
 };
+
+use draw::{
+    draw_line,
+    draw_triangle
+};
+
 use geometry::{
-    Point, AABBox
+    Point, AABBox, Vector2D
 };
 use input::{
     Player, PlayerInput
@@ -130,6 +137,19 @@ fn main() -> ! {
         AABBox::new(top_mid, right_mid), 
         AABBox::new(mid_mid, bottom_right));
 
+    
+    draw_triangle(
+        [Point{x:40, y:40}, Point{x:100, y:30}, Point{x:200, y:100}], 
+        &mut layer_1, Color::from_hex(0xffff00));
+
+    let mut last_curve_update = system_clock::ticks();
+    let mut counter = 0;
+    let mid = Point {
+        x: WIDTH /2, 
+        y: HEIGHT /2,
+    };
+    // let mut opt_last_point = None;
+
     loop {
         // poll for new touch data
         let ticks = system_clock::ticks();
@@ -144,9 +164,6 @@ fn main() -> ! {
             PlayerInput::Right => println!("B right"),
             PlayerInput::Both => println!("B both"),
         }
-
-        player_a.draw(&mut display);
-        player_a.act(&touches);
     }
 }
 

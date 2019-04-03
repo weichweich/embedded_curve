@@ -4,13 +4,14 @@ use stm32f7_discovery::{
     lcd::{Framebuffer, Layer, Color},
 };
 use alloc::vec::Vec;
-use bresenham::{
-    Bresenham
-};
+
 use crate::geometry::{
     Point
 };
 
+use crate::draw::{
+    draw_line
+};
 
 pub struct Curve {
     points: Vec<Point>,
@@ -48,12 +49,4 @@ impl CurveField {
         self.curves.push(Curve::new());
     }
 
-}
-
-pub fn draw_line<F: Framebuffer>(start: Point, end: Point, layer: &mut Layer<F>, color: Color) {
-    let bi = Bresenham::new((start.x as isize, start.y as isize), 
-                            (end.x as isize, end.y as isize));
-    for p in bi {
-        layer.print_point_color_at(p.0 as usize, p.1 as usize, color);
-    }
 }

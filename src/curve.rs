@@ -1,7 +1,5 @@
 extern crate alloc;
 
-use math;
-
 use stm32f7_discovery::{
     lcd::{Framebuffer, Layer, Color},
 };

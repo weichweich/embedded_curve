@@ -16,7 +16,7 @@ extern crate stm32f7_discovery;
 mod curve;
 pub mod geometry;
 
-use math;
+use libm;
 use alloc_cortex_m::CortexMHeap;
 use core::alloc::Layout as AllocLayout;
 use core::panic::PanicInfo;
@@ -128,8 +128,8 @@ fn main() -> ! {
 
         if ticks - last_curve_update >= 10 {
             let p = Point {
-                x: ((WIDTH as i32) /2 + ((math::sinf(counter as f32)*100.0) as i32)) as usize, 
-                y: ((HEIGHT as i32) /2 + ((math::cosf(counter as f32)*100.0) as i32)) as usize,
+                x: ((WIDTH as i32) /2 + ((libm::sinf(counter as f32)*100.0) as i32)) as usize, 
+                y: ((HEIGHT as i32) /2 + ((libm::cosf(counter as f32)*100.0) as i32)) as usize,
             };
 
             match opt_last_point {

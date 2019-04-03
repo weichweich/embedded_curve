@@ -9,7 +9,7 @@ cortex-m = "0.5.2"
 cortex-m-rt = "0.6.4"
 cortex-m-semihosting = "0.3.0"
 alloc-cortex-m = "0.3.4"
-math = {git = "https://github.com/nagisa/math.rs.git"}
+libm = "0.1.2"
 bresenham = "*"
 
 [patch.crates-io.cortex-m-rt]

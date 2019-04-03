@@ -14,7 +14,9 @@ extern crate stm32f7;
 extern crate stm32f7_discovery;
 
 mod curve;
+pub mod geometry;
 
+use math;
 use alloc_cortex_m::CortexMHeap;
 use core::alloc::Layout as AllocLayout;
 use core::panic::PanicInfo;
@@ -28,7 +30,10 @@ use stm32f7_discovery::{
     touch,
 };
 use curve::{
-    Curve, CurveField, Point, draw_line,
+    Curve, CurveField, draw_line,
+};
+use geometry::{
+    Point
 };
 
 const HEAP_SIZE: usize = 50 * 1024; // in bytes
@@ -97,9 +102,19 @@ fn main() -> ! {
     // controller might not be ready yet
     touch::check_family_id(&mut i2c_3).unwrap();
 
+    draw_line(Point{
+        x:0, y:0
+    }, Point {
+        x: 100, y: 100
+    }, &mut layer_1, Color::from_hex(0xffff00));
+
     let mut last_curve_update = system_clock::ticks();
     let mut counter = 0;
-    let mut last_p_opt = None;
+    let mid = Point {
+        x: WIDTH /2, 
+        y: HEIGHT /2,
+    };
+    let mut opt_last_point = None;
     loop {
         // poll for new touch data
         let ticks = system_clock::ticks();
@@ -111,24 +126,21 @@ fn main() -> ! {
             );
         }
 
-        if ticks - last_curve_update >= 100 {
+        if ticks - last_curve_update >= 10 {
             let p = Point {
-                x: WIDTH /2 + (counter % 50), 
-                y: HEIGHT /2 + (counter % 50),
-            };
-            // layer_1.print_point_color_at(p.x, p.y, Color::from_hex(0xffff00));
-            // curve.add_point(p, &mut layer_1, Color::from_hex(0xffff00));
-            match last_p_opt {
-                None => {},
-                Some(last_p) => draw_line(&p, &last_p, &mut layer_1, Color::from_hex(0xffff00)),
+                x: ((WIDTH as i32) /2 + ((math::sinf(counter as f32)*100.0) as i32)) as usize, 
+                y: ((HEIGHT as i32) /2 + ((math::cosf(counter as f32)*100.0) as i32)) as usize,
             };
 
-            last_p_opt = Some(p);
+            match opt_last_point {
+                None => {},
+                Some(last_p) => draw_line(p, last_p, &mut layer_1, Color::from_hex(0xffff00)),
+            }
+            opt_last_point = Some(p);
             last_curve_update = ticks;
             counter += 1;
         }
-    } 
-    
+    }
 }
 
 #[global_allocator]

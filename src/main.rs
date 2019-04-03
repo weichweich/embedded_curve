@@ -138,12 +138,6 @@ fn main() -> ! {
             touches.push(Point{x: touch.x as usize, y: touch.y as usize});
         }
 
-        match player_a.get_player_input(&touches) {
-            PlayerInput::None => {},
-            PlayerInput::Left => println!("A left"),
-            PlayerInput::Right => println!("A right"),
-            PlayerInput::Both => println!("A both"),
-        }
         match player_b.get_player_input(&touches) {
             PlayerInput::None => {},
             PlayerInput::Left => println!("B left"),
@@ -152,7 +146,7 @@ fn main() -> ! {
         }
 
         player_a.draw(&mut display);
-        player_a.act();
+        player_a.act(&touches);
     }
 }
 

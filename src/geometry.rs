@@ -1,40 +1,34 @@
-use core::ops::Add;
-use core::ops::Sub;
+use core::ops::{Add, Sub};
+use libm::{cosf, sinf};
 
 #[derive(Copy,Clone)]
 pub struct Vector2D {
-    pub x: isize,
-    pub y: isize,
+    pub x: f32,
+    pub y: f32,
+}
+
+impl Vector2D {
+    pub fn rotate(self, angle: f32) -> Vector2D {
+        let ca = cosf(angle);
+        let sa = sinf(angle);
+        Vector2D {
+            x: ca * self.x - sa * self.y,
+            y: sa * self.x + ca * self.y,
+        }
+    }
 }
 
 impl Add<Point> for Vector2D {
     type Output = Point;
 
     fn add(self, other: Point) -> Point {
-        let new_x = self.x + (other.x as isize);
-        let new_y = self.y + (other.y as isize);
-        assert!(new_x >= 0, "New X value is less than 0!");
-        assert!(new_y >= 0, "New Y value is less than 0!");
+        let new_x = self.x + (other.x as f32);
+        let new_y = self.y + (other.y as f32);
+        assert!(new_x >= 0.0, "New X value is less than 0!");
+        assert!(new_y >= 0.0, "New Y value is less than 0!");
 
         Point {
             x: (new_x as usize), y: (new_y as usize),
-        }
-    }
-}
-
-#[derive(Copy,Clone)]
-pub struct Point {
-    pub x: usize,
-    pub y: usize,
-}
-
-impl Add for Point {
-    type Output = Point;
-
-    fn add(self, other: Point) -> Point {
-        Point {
-            x: self.x + other.x,
-            y: self.y + other.y,
         }
     }
 }
@@ -61,14 +55,31 @@ impl Sub for Vector2D {
     }
 }
 
+#[derive(Copy,Clone)]
+pub struct Point {
+    pub x: usize,
+    pub y: usize,
+}
+
+impl Add for Point {
+    type Output = Point;
+
+    fn add(self, other: Point) -> Point {
+        Point {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
+    }
+}
+
 impl Add<Vector2D> for Point {
     type Output = Point;
 
     fn add(self, other: Vector2D) -> Point {
-        let new_x = (self.x as isize) + other.x;
-        let new_y = (self.y as isize) + other.y;
-        assert!(new_x >= 0, "New X value is less than 0!");
-        assert!(new_y >= 0, "New Y value is less than 0!");
+        let new_x = (self.x as f32) + other.x;
+        let new_y = (self.y as f32) + other.y;
+        assert!(new_x >= 0.0, "New X value is less than 0!");
+        assert!(new_y >= 0.0, "New Y value is less than 0!");
 
         Point {
             x: (new_x as usize), y: (new_y as usize),

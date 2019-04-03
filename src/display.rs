@@ -23,7 +23,7 @@ impl <'a, F: Framebuffer> Drawing<u8> for LcdDisplay<'a, F> {
         T: Iterator<Item = Pixel<u8>>
     {
         for Pixel(coord, color) in item_pixels {
-            if coord.0 as usize >= WIDTH && coord.1 as usize >= HEIGHT {
+            if coord.0 as usize >= WIDTH || coord.1 as usize >= HEIGHT {
                 continue;
             }
             self.layer.print_point_color_at(coord.0 as usize, coord.1 as usize, 

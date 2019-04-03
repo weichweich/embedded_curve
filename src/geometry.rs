@@ -7,6 +7,21 @@ pub struct Vector2D {
     pub y: isize,
 }
 
+impl Add<Point> for Vector2D {
+    type Output = Point;
+
+    fn add(self, other: Point) -> Point {
+        let new_x = self.x + (other.x as isize);
+        let new_y = self.y + (other.y as isize);
+        assert!(new_x >= 0, "New X value is less than 0!");
+        assert!(new_y >= 0, "New Y value is less than 0!");
+
+        Point {
+            x: (new_x as usize), y: (new_y as usize),
+        }
+    }
+}
+
 #[derive(Copy,Clone)]
 pub struct Point {
     pub x: usize,
@@ -72,8 +87,8 @@ impl AABBox {
         assert!(top_left.x < bottom_right.x, "Left point is more to the right than right point");
         assert!(top_left.y < bottom_right.y, "Top point is more to the bottom than bottom point");
         AABBox {
-            top_left: top_left,
-            bottom_right: bottom_right,
+            top_left,
+            bottom_right,
         }
     }
 

@@ -57,7 +57,7 @@ impl Player {
             pos: start_pos,
             color,
             direction,
-            radius: 5,
+            radius,
         }
     }
 
@@ -97,7 +97,7 @@ impl Player {
     }
 
     pub fn act(&mut self, touches: &[Point]) {
-        let a = (0.40 * PI) / 180.0;
+        let a = 5.0 * (PI) / 180.0;
         match self.get_player_input(touches) {
             PlayerInput::Left => {
                 self.direction = self.direction.rotate(a);

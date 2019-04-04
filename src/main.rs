@@ -134,12 +134,12 @@ fn main() -> ! {
         AABBox::new(top_left, mid_mid), 
         AABBox::new(left_mid, bottom_mid),
         Color::from_hex(0x0000FF), (100.0,  130.0),
-        1, Vector2D{x: 1.0, y: 1.0});
+        2, Vector2D{x: 1.0, y: 1.0});
     let mut player_b = Player::new(
         AABBox::new(mid_mid, bottom_right),
         AABBox::new(top_mid, right_mid), 
         Color::from_hex(0x00FF00), (380.0,  130.0), 
-        1, Vector2D{x: -1.0, y: -1.0});
+        2, Vector2D{x: -1.0, y: -1.0});
 
     let mut last_curve_update = system_clock::ticks();
     // let mut opt_last_point = None;
@@ -151,12 +151,15 @@ fn main() -> ! {
             touches.push(Point{x: touch.x as usize, y: touch.y as usize});
         }
 
-        player_b.act(&touches);
-        player_a.act(&touches);
-        player_a.draw(&mut display);
-        player_b.draw(&mut display);
-
-        last_curve_update = system_clock::ticks();
+        let ticks = system_clock::ticks();
+        if ticks - last_curve_update >= 3 {
+            player_b.act(&touches);
+            player_a.act(&touches);
+            player_a.draw(&mut display);
+            player_b.draw(&mut display);
+            
+            last_curve_update = ticks;
+        }
     }
 }
 

@@ -45,16 +45,19 @@ pub struct Player {
     pos: (f32, f32),
     color: Color,
     direction: Vector2D,
+    radius: u32,
 }
 
 impl Player {
-    pub fn new(left_input_box: AABBox, right_input_box: AABBox) -> Self {
+    pub fn new(left_input_box: AABBox, right_input_box: AABBox, color: Color,
+               start_pos: (f32, f32), radius: u32, direction: Vector2D) -> Self {
         Self {
             input_left: InputRegion::new(left_input_box),
             input_right: InputRegion::new(right_input_box),
-            pos: (100.0,  100.0),
-            color: Color::from_hex(0xFF0000),
-            direction: Vector2D {x: 0.2, y: 0.2},
+            pos: start_pos,
+            color,
+            direction,
+            radius: 5,
         }
     }
 
@@ -71,7 +74,7 @@ impl Player {
     }
 
     pub fn draw<F: Framebuffer>(&self, display: &mut LcdDisplay<F>) {
-        display.draw(Circle::new(Coord::new(self.pos.0 as i32, self.pos.1 as i32), 3)
+        display.draw(Circle::new(Coord::new(self.pos.0 as i32, self.pos.1 as i32), self.radius)
             .with_stroke(Some(1u8.into()))
             .with_fill(Some(1u8.into()))
             .into_iter());
@@ -80,14 +83,21 @@ impl Player {
     fn update_pos(&mut self) {
         let mut new_x = (self.pos.0 + self.direction.x) % WIDTH as f32;
         let mut new_y = (self.pos.1 + self.direction.y) % HEIGHT as f32;
-        if new_x < 0.01 {
-            new_x += 0.6;
+        if new_x < 0.0 {
+            new_x = WIDTH as f32 - 1.0;
+        } else if new_x > WIDTH as f32 {
+            new_x = 0.5;
         }
-        self.pos = (new_x % (WIDTH as f32), new_y % (HEIGHT as f32));
+        if new_y < 0.0 {
+            new_y = HEIGHT as f32 - 1.0;
+        } else if new_y > HEIGHT as f32 {
+            new_y = 0.5;
+        }
+        self.pos = (new_x, new_y);
     }
 
     pub fn act(&mut self, touches: &[Point]) {
-        let a = (2.0 * PI) / 180.0;
+        let a = (0.40 * PI) / 180.0;
         match self.get_player_input(touches) {
             PlayerInput::Left => {
                 self.direction = self.direction.rotate(a);

@@ -1,5 +1,3 @@
-extern crate alloc;
-
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{Circle};
 use crate::geometry::{

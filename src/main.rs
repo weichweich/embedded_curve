@@ -14,7 +14,7 @@ extern crate stm32f7;
 extern crate stm32f7_discovery;
 
 pub mod geometry;
-pub mod input;
+pub mod player;
 pub mod display;
 pub mod draw;
 pub mod playingfield;
@@ -37,7 +37,7 @@ use stm32f7_discovery::{
 use geometry::{
     Point, AABBox
 };
-use input::{
+use player::{
     Player,
 };
 

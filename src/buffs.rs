@@ -51,7 +51,7 @@ impl Buff for FastPlayerBuffSprite {
         });
     }
 
-    fn apply_display<F: Framebuffer>(&self, display: &mut LcdDisplay<F>) {
+    fn apply_display<F: Framebuffer>(&self, _display: &mut LcdDisplay<F>) {
     }
 
     fn draw<F: Framebuffer>(&self, display: &mut LcdDisplay<F>) {
@@ -74,7 +74,7 @@ impl ClearBuff {
 }
 
 impl Buff for ClearBuff {
-    fn apply_player(&self, player: &mut Player) {}
+    fn apply_player(&self, _player: &mut Player) {}
 
     fn apply_display<F: Framebuffer>(&self, display: &mut LcdDisplay<F>) {
         display.clear();
@@ -109,7 +109,7 @@ impl Buff for ChangeDirBuff {
         });
     }
 
-    fn apply_display<F: Framebuffer>(&self, display: &mut LcdDisplay<F>) {}
+    fn apply_display<F: Framebuffer>(&self, _display: &mut LcdDisplay<F>) {}
 
     fn draw<F: Framebuffer>(&self, display: &mut LcdDisplay<F>) {
         display.draw_bmp_rgb8(self.pos, 10, 10, &IMG_CH_DIR);
@@ -140,7 +140,7 @@ impl Buff for SlowBuff {
         });
     }
 
-    fn apply_display<F: Framebuffer>(&self, display: &mut LcdDisplay<F>) {}
+    fn apply_display<F: Framebuffer>(&self, _display: &mut LcdDisplay<F>) {}
 
     fn draw<F: Framebuffer>(&self, display: &mut LcdDisplay<F>) {
         display.draw_bmp_rgb8(self.pos, 10, 10, &IMG_SLOW);

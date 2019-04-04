@@ -131,26 +131,17 @@ fn main() -> ! {
     let left_mid = Point { x: 0, y: HEIGHT / 2 };
     let right_mid = Point { x: WIDTH, y: HEIGHT / 2 };
     
-    loop {
-        match rng.poll_and_get() {
-            Err(_) => {},
-            Ok(num) => {
-                if cfg!(debug_assertions) {println!("rand ready. First num: {}", num);}
-                break;
-            },
-        }
-    }
 
     let pos_a = (
-        rng.poll_and_get().expect("Failed to generate random number")as f32 % WIDTH as f32,
-        rng.poll_and_get().expect("Failed to generate random number")as f32 % HEIGHT as f32,
+        get_rand_num(&mut rng) as f32 % WIDTH as f32,
+        get_rand_num(&mut rng) as f32 % HEIGHT as f32,
     );
     let pos_b = (
-        rng.poll_and_get().expect("Failed to generate random number")as f32 % WIDTH as f32,
-        rng.poll_and_get().expect("Failed to generate random number")as f32 % HEIGHT as f32,
+        get_rand_num(&mut rng) as f32 % WIDTH as f32,
+        get_rand_num(&mut rng) as f32 % HEIGHT as f32,
     );
-    let angle_a = rng.poll_and_get().expect("Failed to generate random number")as f32 % 360_f32;
-    let angle_b = rng.poll_and_get().expect("Failed to generate random number")as f32 % 360_f32;
+    let angle_a = get_rand_num(&mut rng) as f32 % 360_f32;
+    let angle_b = get_rand_num(&mut rng) as f32 % 360_f32;
 
     //ID for Objects 0 = default and 1..255 for objects!!!
     let mut player_a = Player::new(
@@ -165,30 +156,30 @@ fn main() -> ! {
         2, angle_b, 2);
 
     let pos_buff = (
-        rng.poll_and_get().expect("Failed to generate random number")as f32 % WIDTH as f32,
-        rng.poll_and_get().expect("Failed to generate random number")as f32 % HEIGHT as f32,
+        get_rand_num(&mut rng) as f32 % WIDTH as f32,
+        get_rand_num(&mut rng) as f32 % HEIGHT as f32,
     );
     let fp_buff = FastPlayerBuffSprite::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32));
     let pos_buff = (
-        rng.poll_and_get().expect("Failed to generate random number")as f32 % WIDTH as f32,
-        rng.poll_and_get().expect("Failed to generate random number")as f32 % HEIGHT as f32,
+        get_rand_num(&mut rng) as f32 % WIDTH as f32,
+        get_rand_num(&mut rng) as f32 % HEIGHT as f32,
     );
     let c_buff = ClearBuff::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32));
     let pos_buff = (
-        rng.poll_and_get().expect("Failed to generate random number")as f32 % WIDTH as f32,
-        rng.poll_and_get().expect("Failed to generate random number")as f32 % HEIGHT as f32,
+        get_rand_num(&mut rng) as f32 % WIDTH as f32,
+        get_rand_num(&mut rng) as f32 % HEIGHT as f32,
     );
     let cd_buff = ChangeDirBuff::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32));
     let pos_buff = (
-        rng.poll_and_get().expect("Failed to generate random number")as f32 % WIDTH as f32,
-        rng.poll_and_get().expect("Failed to generate random number")as f32 % HEIGHT as f32,
+        get_rand_num(&mut rng) as f32 % WIDTH as f32,
+        get_rand_num(&mut rng) as f32 % HEIGHT as f32,
     );
     let slow_buff = SlowBuff::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32));
 
     let mut last_curve_update = system_clock::ticks();
     // let mut opt_last_point = None;
     let mut playingfield = PlayingField::new();
-    let mut player_thing = system_clock::ticks();
+    let player_thing = system_clock::ticks();
     let mut thing = 0;
 
     loop {
@@ -232,6 +223,18 @@ fn main() -> ! {
             slow_buff.apply_player(&mut player_a);
             thing = 4;
             println!("slow");
+        }
+    }
+}
+
+fn get_rand_num(rnd: &mut Rng) -> u32 {
+    loop {
+        match rnd.poll_and_get() {
+            Err(_) => {},
+            Ok(num) => {
+                if cfg!(debug_assertions) {println!("rand ready. First num: {}", num);}
+                break num
+            },
         }
     }
 }

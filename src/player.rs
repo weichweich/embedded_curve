@@ -2,10 +2,7 @@ use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{Circle};
 use stm32f7_discovery::lcd::{Framebuffer, HEIGHT, WIDTH};
 use core::f32::consts::PI;
-use alloc::{
-    vec::Vec,
-    boxed::Box
-};
+use alloc::vec::Vec;
 
 use crate::geometry::{
     AABBox, Point, Vector2D
@@ -42,9 +39,6 @@ impl InputRegion {
         false
     }
 }
-
-// in degree
-const rotation: f32 = 5.0_f32;
 
 pub struct Player {
     input_left: InputRegion,

@@ -1,4 +1,3 @@
-use alloc::vec::Vec;
 use embedded_graphics::{
     Drawing,
     drawable::Pixel,
@@ -19,7 +18,7 @@ impl <'a, F: Framebuffer> LcdDisplay<'a, F> {
         }
     }
 
-    pub fn draw_bmp_rgb8(&mut self, pos: Coord, width: u32, height: u32,
+    pub fn draw_bmp_rgb8(&mut self, pos: Coord, width: u32, _height: u32,
                          data: &[u8]) {
         let mut r = None;
         let mut g = None;

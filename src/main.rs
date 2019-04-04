@@ -18,6 +18,7 @@ pub mod player;
 pub mod display;
 pub mod draw;
 pub mod playingfield;
+pub mod buffs;
 
 use alloc::vec::Vec;
 use alloc_cortex_m::CortexMHeap;
@@ -43,6 +44,10 @@ use player::{
 
 use display::{LcdDisplay, GameColor};
 use playingfield::{PlayingField};
+use buffs::{
+    FastPlayerBuffSprite, Buff, ClearBuff, ChangeDirBuff, SlowBuff
+};
+use embedded_graphics::coord::Coord;
 
 const HEAP_SIZE: usize = 1024 * 1024; // in bytes
 
@@ -159,9 +164,32 @@ fn main() -> ! {
         GameColor{value: 0x00FF00}, pos_b, 
         2, angle_b, 2);
 
+    let pos_buff = (
+        rng.poll_and_get().expect("Failed to generate random number")as f32 % WIDTH as f32,
+        rng.poll_and_get().expect("Failed to generate random number")as f32 % HEIGHT as f32,
+    );
+    let fp_buff = FastPlayerBuffSprite::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32));
+    let pos_buff = (
+        rng.poll_and_get().expect("Failed to generate random number")as f32 % WIDTH as f32,
+        rng.poll_and_get().expect("Failed to generate random number")as f32 % HEIGHT as f32,
+    );
+    let c_buff = ClearBuff::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32));
+    let pos_buff = (
+        rng.poll_and_get().expect("Failed to generate random number")as f32 % WIDTH as f32,
+        rng.poll_and_get().expect("Failed to generate random number")as f32 % HEIGHT as f32,
+    );
+    let cd_buff = ChangeDirBuff::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32));
+    let pos_buff = (
+        rng.poll_and_get().expect("Failed to generate random number")as f32 % WIDTH as f32,
+        rng.poll_and_get().expect("Failed to generate random number")as f32 % HEIGHT as f32,
+    );
+    let slow_buff = SlowBuff::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32));
+
     let mut last_curve_update = system_clock::ticks();
     // let mut opt_last_point = None;
     let mut playingfield = PlayingField::new();
+    let mut player_thing = system_clock::ticks();
+    let mut thing = 0;
 
     loop {
         // poll for new touch data
@@ -176,8 +204,34 @@ fn main() -> ! {
             player_a.act(&touches);
             player_a.draw(&mut display, &mut playingfield);
             player_b.draw(&mut display, &mut playingfield);
+
+            fp_buff.draw(&mut display);
+            c_buff.draw(&mut display);
+            cd_buff.draw(&mut display);
+            slow_buff.draw(&mut display);
             
             last_curve_update = ticks;
+        }
+        if ticks - player_thing >= 100 && thing == 0 {
+            fp_buff.apply_display(&mut display);
+            fp_buff.apply_player(&mut player_a);
+            thing = 1;
+            println!("fast");
+        } else if ticks - player_thing >= 400 && thing == 1 {
+            c_buff.apply_display(&mut display);
+            c_buff.apply_player(&mut player_a);
+            thing = 2;
+            println!("clear");
+        } else if ticks - player_thing >= 800 && thing == 2 {
+            cd_buff.apply_display(&mut display);
+            cd_buff.apply_player(&mut player_a);
+            thing = 3;
+            println!("change dir");
+        } else if ticks - player_thing >= 1200 && thing == 3 {
+            slow_buff.apply_display(&mut display);
+            slow_buff.apply_player(&mut player_a);
+            thing = 4;
+            println!("slow");
         }
     }
 }

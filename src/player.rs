@@ -1,11 +1,17 @@
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{Circle};
+use stm32f7_discovery::lcd::{Framebuffer, HEIGHT, WIDTH};
+use core::f32::consts::PI;
+use alloc::{
+    vec::Vec,
+    boxed::Box
+};
+
 use crate::geometry::{
     AABBox, Point, Vector2D
 };
-use stm32f7_discovery::lcd::{Framebuffer, HEIGHT, WIDTH};
 use crate::display::{LcdDisplay, GameColor};
-use core::f32::consts::PI;
+use crate::buffs::PlayerBuff;
 
 use crate::playingfield::PlayingField;
 
@@ -37,6 +43,9 @@ impl InputRegion {
     }
 }
 
+// in degree
+const rotation: f32 = 5.0_f32;
+
 pub struct Player {
     input_left: InputRegion,
     input_right: InputRegion,
@@ -46,6 +55,7 @@ pub struct Player {
     direction: Vector2D,
     radius: u32,
     speed: f32,
+    buffs: Vec<PlayerBuff>,
 }
 
 impl Player {
@@ -61,6 +71,7 @@ impl Player {
             direction: Vector2D{x: 1.0, y: 0.0}.rotate(a),
             speed: 1.0,
             radius,
+            buffs: Vec::new(),
         }
     }
 
@@ -78,11 +89,14 @@ impl Player {
 
     pub fn draw<F: Framebuffer>(&self, display: &mut LcdDisplay<F>, 
         playing_field: &mut PlayingField) {
-        
+        let color = self.buffs
+                        .iter()
+                        .fold(self.color, |acc, func| (func.change_color)(acc));
+
         let circle_iter = 
         Circle::new(Coord::new(self.pos.0 as i32, self.pos.1 as i32), self.radius)
-            .with_stroke(Some(self.color))
-            .with_fill(Some(self.color))
+            .with_stroke(Some(color))
+            .with_fill(Some(color))
             .into_iter();
             
         display.draw(circle_iter);
@@ -90,8 +104,11 @@ impl Player {
     }
 
     fn update_pos(&mut self) {
-        let mut new_x = (self.pos.0 + self.direction.x * self.speed) % WIDTH as f32;
-        let mut new_y = (self.pos.1 + self.direction.y * self.speed) % HEIGHT as f32;
+        let speed = self.buffs
+                        .iter()
+                        .fold(self.speed, |acc, func| (func.change_speed)(acc));
+        let mut new_x = (self.pos.0 + self.direction.x * speed) % WIDTH as f32;
+        let mut new_y = (self.pos.1 + self.direction.y * speed) % HEIGHT as f32;
         if new_x < 0.0 {
             new_x = WIDTH as f32 - 1.0;
         } else if new_x > WIDTH as f32 {
@@ -105,8 +122,21 @@ impl Player {
         self.pos = (new_x, new_y);
     }
 
+    fn update_buffs(&mut self) {
+        let mut i = 0;
+        while i < self.buffs.len() {
+            if self.buffs[i].timeout == 0 {
+                self.buffs.remove(i);
+            } else {
+                self.buffs[i].timeout -= 1;
+                i += 1;
+            }
+        }
+    }
+
     pub fn act(&mut self, touches: &[Point]) {
-        let a = 5.0 * (PI) / 180.0;
+        let d = self.buffs.iter().fold(5.0, |acc, func| (func.change_rotation)(acc));
+        let a = d * (PI) / 180.0;
         match self.get_player_input(touches) {
             PlayerInput::Left => {
                 self.direction = self.direction.rotate(-a);
@@ -117,5 +147,10 @@ impl Player {
             _ => {},
         }
         self.update_pos();
+        self.update_buffs();
+    }
+
+    pub fn add_buff(&mut self, buff: PlayerBuff) {
+        self.buffs.push(buff);
     }
 }

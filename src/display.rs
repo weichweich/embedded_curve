@@ -47,6 +47,10 @@ impl <'a, F: Framebuffer> LcdDisplay<'a, F> {
             }
         }
     }
+
+    pub fn clear(&mut self) {
+        self.layer.clear();
+    }
 }
 
 impl <'a, F: Framebuffer> Drawing<GameColor> for LcdDisplay<'a, F> {

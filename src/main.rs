@@ -123,6 +123,16 @@ fn main() -> ! {
     let left_mid = Point { x: 0, y: HEIGHT / 2 };
     let right_mid = Point { x: WIDTH, y: HEIGHT / 2 };
     
+    loop {
+        match rng.poll_and_get() {
+            Err(_) => {},
+            Ok(num) => {
+                println!("{}", num);
+                break;
+            },
+        }
+    }
+
     let pos_a = (
         rng.poll_and_get().expect("Failed to generate random number")as f32 % WIDTH as f32,
         rng.poll_and_get().expect("Failed to generate random number")as f32 % HEIGHT as f32,

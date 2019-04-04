@@ -46,17 +46,20 @@ pub struct Player {
     color: GameColor,
     direction: Vector2D,
     radius: u32,
+    speed: f32,
 }
 
 impl Player {
     pub fn new(left_input_box: AABBox, right_input_box: AABBox, color: GameColor,
-               start_pos: (f32, f32), radius: u32, direction: Vector2D) -> Self {
+               start_pos: (f32, f32), radius: u32, angle: f32) -> Self {
+        let a = angle * (PI) / 180.0;
         Self {
             input_left: InputRegion::new(left_input_box),
             input_right: InputRegion::new(right_input_box),
             pos: start_pos,
             color,
-            direction,
+            direction: Vector2D{x: 1.0, y: 0.0}.rotate(a),
+            speed: 1.0,
             radius,
         }
     }
@@ -81,8 +84,8 @@ impl Player {
     }
 
     fn update_pos(&mut self) {
-        let mut new_x = (self.pos.0 + self.direction.x) % WIDTH as f32;
-        let mut new_y = (self.pos.1 + self.direction.y) % HEIGHT as f32;
+        let mut new_x = (self.pos.0 + self.direction.x * self.speed) % WIDTH as f32;
+        let mut new_y = (self.pos.1 + self.direction.y * self.speed) % HEIGHT as f32;
         if new_x < 0.0 {
             new_x = WIDTH as f32 - 1.0;
         } else if new_x > WIDTH as f32 {

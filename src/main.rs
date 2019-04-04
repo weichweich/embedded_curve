@@ -33,6 +33,7 @@ use stm32f7_discovery::{
     system_clock::{self, Hz},
     lcd::{self, Color, WIDTH, HEIGHT},
     touch,
+    random::Rng,
 };
 use embedded_graphics::prelude::*;
 use embedded_graphics::Drawing;
@@ -69,6 +70,7 @@ fn main() -> ! {
     let mut fmc = peripherals.FMC;
     let mut ltdc = peripherals.LTDC;
     let mut sai_2 = peripherals.SAI2;
+    let mut rng = peripherals.RNG;
 
     init::init_system_clock_216mhz(&mut rcc, &mut pwr, &mut flash);
     init::enable_gpio_ports(&mut rcc);
@@ -110,8 +112,9 @@ fn main() -> ! {
 
     // Make `println` print to the LCD
     lcd::init_stdout(layer_2);
-
-    println!("Hello World");
+    if cfg!(debug_assertions) {
+        println!("Start Game");
+    }
 
     let mut i2c_3 = init::init_i2c_3(peripherals.I2C3, &mut rcc);
     i2c_3.test_1();
@@ -123,6 +126,8 @@ fn main() -> ! {
     // controller might not be ready yet
     touch::check_family_id(&mut i2c_3).unwrap();
 
+    let mut rng = Rng::init(&mut rng, &mut rcc).expect("RNG init failed");
+
     let mut display = LcdDisplay::new(&mut layer_1);
 
     let top_left = Point { x: 0, y: 0};
@@ -133,17 +138,28 @@ fn main() -> ! {
     let bottom_right = Point { x: WIDTH, y: HEIGHT};
     let left_mid = Point { x: 0, y: HEIGHT / 2 };
     let right_mid = Point { x: WIDTH, y: HEIGHT / 2 };
+    
+    let pos_a = (
+        rng.poll_and_get().expect("Failed to generate random number")as f32 % WIDTH as f32,
+        rng.poll_and_get().expect("Failed to generate random number")as f32 % HEIGHT as f32,
+    );
+    let pos_b = (
+        rng.poll_and_get().expect("Failed to generate random number")as f32 % WIDTH as f32,
+        rng.poll_and_get().expect("Failed to generate random number")as f32 % HEIGHT as f32,
+    );
+    let angle_a = rng.poll_and_get().expect("Failed to generate random number")as f32 % 360_f32;
+    let angle_b = rng.poll_and_get().expect("Failed to generate random number")as f32 % 360_f32;
 
     let mut player_a = Player::new(
-        AABBox::new(top_left, mid_mid), 
         AABBox::new(left_mid, bottom_mid),
-        GameColor{value:0x0000FF}, (100.0,  130.0),
-        2, Vector2D{x: 1.0, y: 1.0});
+        AABBox::new(top_left, mid_mid), 
+        GameColor{value:0x0000FF}, pos_a,
+        2, angle_a);
     let mut player_b = Player::new(
-        AABBox::new(mid_mid, bottom_right),
         AABBox::new(top_mid, right_mid), 
-        GameColor{value: 0x00FF00}, (380.0,  130.0), 
-        2, Vector2D{x: -1.0, y: -1.0});
+        AABBox::new(mid_mid, bottom_right),
+        GameColor{value: 0x00FF00}, pos_b, 
+        2, angle_b);
 
     let mut last_curve_update = system_clock::ticks();
     // let mut opt_last_point = None;

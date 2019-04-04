@@ -100,9 +100,7 @@ fn main() -> ! {
 
     // Make `println` print to the LCD
     lcd::init_stdout(layer_2);
-    if cfg!(debug_assertions) {
-        println!("Start Game");
-    }
+    if cfg!(debug_assertions) {println!("Start Game");}
 
     println!("{}", HEAP_SIZE);
 
@@ -132,7 +130,7 @@ fn main() -> ! {
         match rng.poll_and_get() {
             Err(_) => {},
             Ok(num) => {
-                println!("{}", num);
+                if cfg!(debug_assertions) {println!("rand ready. First num: {}", num);}
                 break;
             },
         }

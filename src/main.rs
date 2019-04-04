@@ -132,38 +132,31 @@ fn main() -> ! {
 
     let mut player_a = Player::new(
         AABBox::new(top_left, mid_mid), 
-        AABBox::new(left_mid, bottom_mid));
+        AABBox::new(left_mid, bottom_mid),
+        Color::from_hex(0x0000FF), (100.0,  130.0),
+        1, Vector2D{x: 1.0, y: 1.0});
     let mut player_b = Player::new(
+        AABBox::new(mid_mid, bottom_right),
         AABBox::new(top_mid, right_mid), 
-        AABBox::new(mid_mid, bottom_right));
-
-    
-    draw_triangle(
-        [Point{x:40, y:40}, Point{x:100, y:30}, Point{x:200, y:100}], 
-        &mut layer_1, Color::from_hex(0xffff00));
+        Color::from_hex(0x00FF00), (380.0,  130.0), 
+        1, Vector2D{x: -1.0, y: -1.0});
 
     let mut last_curve_update = system_clock::ticks();
-    let mut counter = 0;
-    let mid = Point {
-        x: WIDTH /2, 
-        y: HEIGHT /2,
-    };
     // let mut opt_last_point = None;
 
     loop {
         // poll for new touch data
-        let ticks = system_clock::ticks();
         let mut touches: Vec<Point> = Vec::new();
         for touch in &touch::touches(&mut i2c_3).unwrap() {
             touches.push(Point{x: touch.x as usize, y: touch.y as usize});
         }
 
-        match player_b.get_player_input(&touches) {
-            PlayerInput::None => {},
-            PlayerInput::Left => println!("B left"),
-            PlayerInput::Right => println!("B right"),
-            PlayerInput::Both => println!("B both"),
-        }
+        player_b.act(&touches);
+        player_a.act(&touches);
+        player_a.draw(&mut display);
+        player_b.draw(&mut display);
+
+        last_curve_update = system_clock::ticks();
     }
 }
 

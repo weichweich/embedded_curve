@@ -72,7 +72,7 @@ pub fn draw_triangle<F: Framebuffer>(points: [Point; 3], layer: &mut Layer<F>, c
 
         for (x_, y_) in b {
             let j : usize = (y_ - y_offset as isize) as usize ;
-            assert!(j >= 0 && j <= range, "Array out of bounds: sorted_rows!");
+            assert!(j <= range, "Array out of bounds: sorted_rows!");
             sorted_rows[j].push( Point{x: x_ as usize, y: y_ as usize } );
 
         }
@@ -81,15 +81,11 @@ pub fn draw_triangle<F: Framebuffer>(points: [Point; 3], layer: &mut Layer<F>, c
     //Draw lines/rows pixelwise
     for row in sorted_rows {
         let y_ = row[0].y;
-        let mut x_min: usize;
-        let mut x_max: usize;
-        if( row[0].x < row[row.len()-1].x){
-            x_min = row[0].x;
-            x_max = row[row.len()-1].x;
+        let (x_min, x_max) = if row[0].x < row[row.len()-1].x {
+            (row[0].x, row[row.len()-1].x)
         } else {
-            x_min = row[row.len()-1].x;
-            x_max = row[0].x;
-        }
+            (row[row.len()-1].x, row[0].x)
+        };
         for x_ in x_min..=x_max {
             layer.print_point_color_at(x_ as usize, y_ as usize, color);
         }

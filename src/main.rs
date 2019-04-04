@@ -9,18 +9,15 @@ extern crate alloc_cortex_m;
 extern crate cortex_m;
 extern crate cortex_m_rt as rt;
 extern crate cortex_m_semihosting;
-#[macro_use]
 extern crate stm32f7;
 #[macro_use]
 extern crate stm32f7_discovery;
 
-mod curve;
 pub mod geometry;
 pub mod input;
 pub mod display;
 pub mod draw;
 
-use libm;
 use alloc::vec::Vec;
 use alloc_cortex_m::CortexMHeap;
 use core::alloc::Layout as AllocLayout;
@@ -35,24 +32,12 @@ use stm32f7_discovery::{
     touch,
     random::Rng,
 };
-use embedded_graphics::prelude::*;
-use embedded_graphics::Drawing;
-use embedded_graphics::coord::Coord;
-use embedded_graphics::primitives::{Circle, Rect};
-use curve::{
-    Curve, CurveField
-};
-
-use draw::{
-    draw_line,
-    draw_triangle
-};
 
 use geometry::{
-    Point, AABBox, Vector2D
+    Point, AABBox
 };
 use input::{
-    Player, PlayerInput,
+    Player,
 };
 use display::{LcdDisplay, GameColor};
 
@@ -132,7 +117,6 @@ fn main() -> ! {
 
     let top_left = Point { x: 0, y: 0};
     let top_mid = Point { x: WIDTH/ 2, y: 0};
-    let bottom_left = Point { x: 0, y: HEIGHT};
     let mid_mid = Point { x: WIDTH / 2, y: HEIGHT / 2};
     let bottom_mid = Point { x: WIDTH / 2, y: HEIGHT};
     let bottom_right = Point { x: WIDTH, y: HEIGHT};

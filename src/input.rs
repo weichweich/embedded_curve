@@ -1,13 +1,11 @@
 extern crate alloc;
 
 use embedded_graphics::prelude::*;
-use embedded_graphics::coord::Coord;
-use embedded_graphics::primitives::{Circle, Rect};
-use alloc::vec::Vec;
+use embedded_graphics::primitives::{Circle};
 use crate::geometry::{
     AABBox, Point, Vector2D
 };
-use stm32f7_discovery::lcd::{Framebuffer, Layer, HEIGHT, WIDTH};
+use stm32f7_discovery::lcd::{Framebuffer, HEIGHT, WIDTH};
 use crate::display::{LcdDisplay, GameColor};
 use core::f32::consts::PI;
 

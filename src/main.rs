@@ -51,9 +51,9 @@ use geometry::{
     Point, AABBox, Vector2D
 };
 use input::{
-    Player, PlayerInput
+    Player, PlayerInput,
 };
-use display::LcdDisplay;
+use display::{LcdDisplay, GameColor};
 
 const HEAP_SIZE: usize = 50 * 1024; // in bytes
 
@@ -133,12 +133,12 @@ fn main() -> ! {
     let mut player_a = Player::new(
         AABBox::new(top_left, mid_mid), 
         AABBox::new(left_mid, bottom_mid),
-        Color::from_hex(0x0000FF), (100.0,  130.0),
+        GameColor{value:0x0000FF}, (100.0,  130.0),
         1, Vector2D{x: 1.0, y: 1.0});
     let mut player_b = Player::new(
         AABBox::new(mid_mid, bottom_right),
         AABBox::new(top_mid, right_mid), 
-        Color::from_hex(0x00FF00), (380.0,  130.0), 
+        GameColor{value: 0x00FF00}, (380.0,  130.0), 
         1, Vector2D{x: -1.0, y: -1.0});
 
     let mut last_curve_update = system_clock::ticks();

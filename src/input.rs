@@ -7,8 +7,8 @@ use alloc::vec::Vec;
 use crate::geometry::{
     AABBox, Point, Vector2D
 };
-use stm32f7_discovery::lcd::{Framebuffer, Layer, Color, HEIGHT, WIDTH};
-use crate::display::LcdDisplay;
+use stm32f7_discovery::lcd::{Framebuffer, Layer, HEIGHT, WIDTH};
+use crate::display::{LcdDisplay, GameColor};
 use core::f32::consts::PI;
 
 pub enum PlayerInput {
@@ -43,13 +43,13 @@ pub struct Player {
     input_left: InputRegion,
     input_right: InputRegion,
     pos: (f32, f32),
-    color: Color,
+    color: GameColor,
     direction: Vector2D,
     radius: u32,
 }
 
 impl Player {
-    pub fn new(left_input_box: AABBox, right_input_box: AABBox, color: Color,
+    pub fn new(left_input_box: AABBox, right_input_box: AABBox, color: GameColor,
                start_pos: (f32, f32), radius: u32, direction: Vector2D) -> Self {
         Self {
             input_left: InputRegion::new(left_input_box),
@@ -75,8 +75,8 @@ impl Player {
 
     pub fn draw<F: Framebuffer>(&self, display: &mut LcdDisplay<F>) {
         display.draw(Circle::new(Coord::new(self.pos.0 as i32, self.pos.1 as i32), self.radius)
-            .with_stroke(Some(1u8.into()))
-            .with_fill(Some(1u8.into()))
+            .with_stroke(Some(self.color))
+            .with_fill(Some(self.color))
             .into_iter());
     }
 

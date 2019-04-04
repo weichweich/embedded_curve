@@ -68,6 +68,7 @@ fn main() -> ! {
     let mut flash = peripherals.FLASH;
     let mut fmc = peripherals.FMC;
     let mut ltdc = peripherals.LTDC;
+    let mut sai_2 = peripherals.SAI2;
 
     init::init_system_clock_216mhz(&mut rcc, &mut pwr, &mut flash);
     init::enable_gpio_ports(&mut rcc);
@@ -115,6 +116,9 @@ fn main() -> ! {
     let mut i2c_3 = init::init_i2c_3(peripherals.I2C3, &mut rcc);
     i2c_3.test_1();
     i2c_3.test_2();
+
+    init::init_sai_2(&mut sai_2, &mut rcc);
+    init::init_wm8994(&mut i2c_3).expect("WM8994 init failed");
     // touch initialization should be done after audio initialization, because the touch
     // controller might not be ready yet
     touch::check_family_id(&mut i2c_3).unwrap();
@@ -174,6 +178,7 @@ fn SysTick() {
 // define what happens in an Out Of Memory (OOM) condition
 #[alloc_error_handler]
 fn rust_oom(_: AllocLayout) -> ! {
+    println!("OOM!!");
     loop {}
 }
 
@@ -182,7 +187,8 @@ fn panic(info: &PanicInfo) -> ! {
     use core::fmt::Write;
     use cortex_m::asm;
     use cortex_m_semihosting::hio;
-
+    println!("PANIC");
+    println!("{}", info);
     if let Ok(mut hstdout) = hio::hstdout() {
         let _ = writeln!(hstdout, "{}", info);
     }

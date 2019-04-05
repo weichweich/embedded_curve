@@ -8,9 +8,15 @@ use crate::geometry::{
     AABBox, Point, Vector2D
 };
 use crate::display::{LcdDisplay, GameColor};
-use crate::buffs::PlayerBuff;
+use crate::buffs::{PlayerBuff, Buff};
 
 use crate::playingfield::PlayingField;
+
+
+pub trait Collide<T> {
+    fn collides_with<F: Framebuffer>(&mut self, incoming: &mut T, 
+                                     display: &mut LcdDisplay<F>);
+}
 
 pub enum PlayerInput {
     Left,
@@ -45,7 +51,7 @@ pub struct Player {
     input_right: InputRegion,
     pos: (f32, f32),
     color: GameColor,
-    id: u32,
+    id: u8,
     direction: Vector2D,
     radius: u32,
     speed: f32,
@@ -54,7 +60,7 @@ pub struct Player {
 
 impl Player {
     pub fn new(left_input_box: AABBox, right_input_box: AABBox, color: GameColor,
-               start_pos: (f32, f32), radius: u32, angle: f32, id: u32) -> Self {
+               start_pos: (f32, f32), radius: u32, angle: f32, id: u8) -> Self {
         let a = angle * (PI) / 180.0;
         Self {
             input_left: InputRegion::new(left_input_box),
@@ -82,7 +88,7 @@ impl Player {
     }
 
     pub fn draw<F: Framebuffer>(&self, display: &mut LcdDisplay<F>, 
-        playing_field: &mut PlayingField) {
+                                playing_field: &mut PlayingField) {
         let color = self.buffs
                         .iter()
                         .fold(self.color, |acc, func| (func.change_color)(acc));
@@ -146,5 +152,19 @@ impl Player {
 
     pub fn add_buff(&mut self, buff: PlayerBuff) {
         self.buffs.push(buff);
+    }
+}
+
+impl<T: Buff> Collide<T> for Player {
+    fn collides_with<F: Framebuffer>(&mut self, incoming: &mut T, display: &mut LcdDisplay<F>) {
+        if incoming.clear_screen() {
+            display.clear();
+        }
+        incoming.apply_player(self);
+    }
+}
+
+impl Collide<Player> for Player {
+    fn collides_with<F: Framebuffer>(&mut self, incoming: &mut Player, display: &mut LcdDisplay<F>) {
     }
 }

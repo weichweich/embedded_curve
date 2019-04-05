@@ -1,33 +1,28 @@
 extern crate alloc;
 
+use alloc::vec::Vec;
 use stm32f7_discovery::{
-    system_clock::{self, Hz},
-    lcd::{ HEIGHT, WIDTH}
+    system_clock::self,
+    lcd::{HEIGHT, WIDTH}
 };
-
-// use crate::geometry::{
-//     AABBox, Point, Vector2D
-// };
-
 use embedded_graphics::{
     drawable::Pixel,
 };
-
+use crate::geometry::Point;
 use crate::display::GameColor;
 
 pub struct PlayingField{
-    id : [[ (u8); HEIGHT]; WIDTH],
+    id_field: [[ (u8); HEIGHT]; WIDTH],
     pub collision : bool,
-    // ticks : Vec<Vec<u8>>,                        Option 1: 2D Array
-    // ticks : [[ (u8); HEIGHT]; WIDTH],            Option 2: 2D Vectors
-    // usize old_ticks : usize,
-    // collisions : Vec<Collision>,
+    // ticks : Vec<Vec<u8>>,                        Option 1: 2D Array Option 2: 2D Vectors
+    // ticks_field : [[ (u8); HEIGHT]; WIDTH],            
+    collisions : Vec<Collision>,
 }
 
-// pub struct Collision{
-//     id : u32,
-//     pos : Point,
-// }
+pub struct Collision{
+    old_id: u8,
+    new_id: u8,
+}
 
 impl PlayingField{
     pub fn new() -> Self {
@@ -39,12 +34,11 @@ impl PlayingField{
         // println!("...");
 
         Self{
-            id : [[0; HEIGHT]; WIDTH],
-            collision : false,
-            // ticks : [[0; HEIGHT]; WIDTH],
+            id_field: [[0; HEIGHT]; WIDTH],
+            collision: false,
+            collisions: Vec::new(),
+            // ticks_field : [[0; HEIGHT]; WIDTH],
             // ticks : v_ticks,
-            // collisions : Vec::new(),
-
         }
     }
 
@@ -52,28 +46,36 @@ impl PlayingField{
     where
         T: Iterator<Item = Pixel<GameColor>>
     {   
-        // let ticks_ = system_clock::ticks();
+        // let ticks = system_clock::ticks();
 
         for Pixel(coord, _) in item_pixels {
             if coord.0 as usize >= WIDTH || coord.1 as usize >= HEIGHT {
                 continue;
             }
-            // println!("test");
 
-            if self.id[coord.0 as usize][coord.1 as usize] != id as u8 &&  //other object intersected
-             self.id[coord.0 as usize][coord.1 as usize] != 0 {            //
-                // && self.ticks[coord.0 as usize][coord.1 as usize] + 10 < ticks_ as u8 {
+            let old_id = self.id_field[coord.0 as usize][coord.1 as usize];
+            let mut old_ids: Vec<u8> = Vec::new();
+            if !old_ids.contains(&old_id) && old_id != new_id && old_id != 0 {
+                //self.ticks_field[coord.0 as usize][coord.1 as usize] + 10 < ticks as u8 {
                 
                 self.collision = true;
                 println!("collision");
-                // self.collisions.push(Collision{id: id, pos: 
-                //     Point(x: coord.0 as usize, y: coord.1 as usize)});
+                old_ids.push(old_id);
+                self.collisions.push( Collision{old_id, new_id} );
             } 
             
-            self.id[coord.0 as usize][coord.1 as usize] = id as u8;
+            self.id_field[coord.0 as usize][coord.1 as usize] = new_id ;
             // self.ticks[coord.0 as usize][coord.1 as usize] = ticks_ as u8;
         }
 
-    }  
+    }
+
+    pub fn reset_collisions(&mut self){
+        self.collisions.clear();
+    }
+
+    pub fn clear(&mut self){
+        self.id_field = [[0; HEIGHT]; WIDTH];
+    }
 
 }

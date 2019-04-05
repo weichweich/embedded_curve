@@ -80,6 +80,7 @@ impl Player {
             buffs: Vec::new(),
             trace: Vec::new(),
         };
+        s.trace.push( (start_pos.0, start_pos.1, radius) );     //segment extends by updating
         s.trace.push( (start_pos.0, start_pos.1, radius) );
         s
     }
@@ -112,7 +113,7 @@ impl Player {
         playing_field.store(circle_iter, self.id);
     }
 
-    fn update_pos(&mut self, trace_update: bool) {
+    fn update_pos(&mut self, new_trace_segment: bool) {
         let speed = self.buffs
                         .iter()
                         .fold(self.speed, |acc, func| (func.change_speed)(acc));
@@ -130,8 +131,12 @@ impl Player {
         }
         self.pos = (new_x, new_y);
         
-        if trace_update {
-            self.trace.push( (self.pos.0, self.pos.1, self.radius) );
+        let tracepoint : (f32, f32, u32) = (self.pos.0, self.pos.1, self.radius);
+        if new_trace_segment {
+            self.trace.push( tracepoint );
+            self.trace.push( tracepoint );
+        } else {
+            self.trace[self.trace.len()-1] = tracepoint;
         }
     }
 
@@ -150,19 +155,19 @@ impl Player {
     pub fn act(&mut self, touches: &[Point]) {
         let d = self.buffs.iter().fold(5.0, |acc, func| (func.change_rotation)(acc));
         let a = d * (PI) / 180.0;
-        let mut trace_update: bool = false;
+        let mut new_trace_segment: bool = false;
         match self.get_player_input(touches) {
             PlayerInput::Left => {
                 self.direction = self.direction.rotate(-a);
-                trace_update = true;
+                new_trace_segment = true;
             },
             PlayerInput::Right => {
                 self.direction = self.direction.rotate(a);
-                trace_update = true;
+                new_trace_segment = true;
             },
             _ => {},
         }
-        self.update_pos(trace_update);
+        self.update_pos(new_trace_segment);
         self.update_buffs();
     }
 
@@ -185,6 +190,15 @@ impl<T: Buff> Collide<T> for Player {
 
 impl Collide<Player> for Player {
     fn collides_with(&self, incoming: &Player) -> bool {
+        let trace_pos1 = self.trace.last().unwrap();
+        let trace_pos2 = incoming.trace.last().unwrap();
+
+        let p1_pos = (trace_pos1.0, trace_pos1.1);
+        let p2_pos = (trace_pos2.0, trace_pos2.1);
+
+        let r1 = trace_pos1.2;
+        let r2 = trace_pos2.2;
+
         false
     }
 }

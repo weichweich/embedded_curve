@@ -60,6 +60,10 @@ impl Buff for FastPlayerBuffSprite {
     fn draw(&self) -> ImgIterator {
         ImgIterator::new(&IMG_FAST, 10, self.pos)
     }
+
+    fn aabb(&self) -> (Coord, Coord){
+        (self.pos, self.pos)
+    }
 }
 
 // Clear Buff
@@ -84,6 +88,10 @@ impl Buff for ClearBuff {
 
     fn draw(&self) -> ImgIterator {
         ImgIterator::new(&IMG_CLEAR, 10, self.pos)
+    }
+
+    fn aabb(&self) -> (Coord, Coord){
+        (self.pos, self.pos)
     }
 }
 
@@ -119,6 +127,10 @@ impl Buff for ChangeDirBuff {
     fn draw(&self) -> ImgIterator {
         ImgIterator::new(&IMG_CH_DIR, 10, self.pos)
     }
+
+    fn aabb(&self) -> (Coord, Coord){
+        (self.pos, self.pos)
+    }
 }
 
 // Slow Player Buff
@@ -151,5 +163,9 @@ impl Buff for SlowBuff {
 
     fn draw(&self) -> ImgIterator {
         ImgIterator::new(&IMG_SLOW, 10, self.pos)
+    }
+
+    fn aabb(&self) -> (Coord, Coord){
+        (self.pos, self.pos)
     }
 }

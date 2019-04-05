@@ -17,6 +17,7 @@ pub mod geometry;
 pub mod input;
 pub mod display;
 pub mod draw;
+pub mod playingfield;
 
 use alloc::vec::Vec;
 use alloc_cortex_m::CortexMHeap;
@@ -39,9 +40,11 @@ use geometry::{
 use input::{
     Player,
 };
-use display::{LcdDisplay, GameColor};
 
-const HEAP_SIZE: usize = 50 * 1024; // in bytes
+use display::{LcdDisplay, GameColor};
+use playingfield::{PlayingField};
+
+const HEAP_SIZE: usize = 1024 * 1024; // in bytes
 
 #[entry]
 fn main() -> ! {
@@ -101,6 +104,8 @@ fn main() -> ! {
         println!("Start Game");
     }
 
+    println!("{}", HEAP_SIZE);
+
     let mut i2c_3 = init::init_i2c_3(peripherals.I2C3, &mut rcc);
     i2c_3.test_1();
     i2c_3.test_2();
@@ -144,19 +149,21 @@ fn main() -> ! {
     let angle_a = rng.poll_and_get().expect("Failed to generate random number")as f32 % 360_f32;
     let angle_b = rng.poll_and_get().expect("Failed to generate random number")as f32 % 360_f32;
 
+    //ID for Objects 0 = default and 1..255 for objects!!!
     let mut player_a = Player::new(
         AABBox::new(left_mid, bottom_mid),
         AABBox::new(top_left, mid_mid), 
         GameColor{value:0x0000FF}, pos_a,
-        2, angle_a);
+        2, angle_a, 1);
     let mut player_b = Player::new(
         AABBox::new(top_mid, right_mid), 
         AABBox::new(mid_mid, bottom_right),
         GameColor{value: 0x00FF00}, pos_b, 
-        2, angle_b);
+        2, angle_b, 2);
 
     let mut last_curve_update = system_clock::ticks();
     // let mut opt_last_point = None;
+    let mut playingfield = PlayingField::new();
 
     loop {
         // poll for new touch data
@@ -164,13 +171,13 @@ fn main() -> ! {
         for touch in &touch::touches(&mut i2c_3).unwrap() {
             touches.push(Point{x: touch.x as usize, y: touch.y as usize});
         }
-
+        // println!("hoolahoop");
         let ticks = system_clock::ticks();
-        if ticks - last_curve_update >= 3 {
+        if  !playingfield.collision && ticks - last_curve_update >= 3 {
             player_b.act(&touches);
             player_a.act(&touches);
-            player_a.draw(&mut display);
-            player_b.draw(&mut display);
+            player_a.draw(&mut display, &mut playingfield);
+            player_b.draw(&mut display, &mut playingfield);
             
             last_curve_update = ticks;
         }

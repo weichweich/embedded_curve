@@ -9,6 +9,8 @@ use stm32f7_discovery::lcd::{Framebuffer, HEIGHT, WIDTH};
 use crate::display::{LcdDisplay, GameColor};
 use core::f32::consts::PI;
 
+use crate::playingfield::PlayingField;
+
 pub enum PlayerInput {
     Left,
     Right,
@@ -42,6 +44,7 @@ pub struct Player {
     input_right: InputRegion,
     pos: (f32, f32),
     color: GameColor,
+    id: u32,
     direction: Vector2D,
     radius: u32,
     speed: f32,
@@ -49,13 +52,14 @@ pub struct Player {
 
 impl Player {
     pub fn new(left_input_box: AABBox, right_input_box: AABBox, color: GameColor,
-               start_pos: (f32, f32), radius: u32, angle: f32) -> Self {
+               start_pos: (f32, f32), radius: u32, angle: f32, id: u32) -> Self {
         let a = angle * (PI) / 180.0;
         Self {
             input_left: InputRegion::new(left_input_box),
             input_right: InputRegion::new(right_input_box),
             pos: start_pos,
             color,
+            id,
             direction: Vector2D{x: 1.0, y: 0.0}.rotate(a),
             speed: 1.0,
             radius,
@@ -74,11 +78,17 @@ impl Player {
         }
     }
 
-    pub fn draw<F: Framebuffer>(&self, display: &mut LcdDisplay<F>) {
-        display.draw(Circle::new(Coord::new(self.pos.0 as i32, self.pos.1 as i32), self.radius)
+    pub fn draw<F: Framebuffer>(&self, display: &mut LcdDisplay<F>, 
+        playing_field: &mut PlayingField) {
+        
+        let circle_iter = 
+        Circle::new(Coord::new(self.pos.0 as i32, self.pos.1 as i32), self.radius)
             .with_stroke(Some(self.color))
             .with_fill(Some(self.color))
-            .into_iter());
+            .into_iter();
+            
+        display.draw(circle_iter);
+        playing_field.store(circle_iter, self.id);
     }
 
     fn update_pos(&mut self) {
@@ -101,10 +111,10 @@ impl Player {
         let a = 5.0 * (PI) / 180.0;
         match self.get_player_input(touches) {
             PlayerInput::Left => {
-                self.direction = self.direction.rotate(a);
+                self.direction = self.direction.rotate(-a);
             },
             PlayerInput::Right => {
-                self.direction = self.direction.rotate(-a);
+                self.direction = self.direction.rotate(a);
             },
             _ => {},
         }

@@ -3,6 +3,7 @@ use embedded_graphics::{
     drawable::Pixel,
     pixelcolor::PixelColor,
 };
+
 use stm32f7_discovery::lcd::{Framebuffer, Layer, Color, WIDTH, HEIGHT};
 
 pub struct LcdDisplay<'a, F: Framebuffer> {

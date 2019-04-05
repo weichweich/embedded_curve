@@ -60,13 +60,15 @@ pub struct Player {
     radius: u32,
     speed: f32,
     buffs: Vec<PlayerBuff>,
+    trace: Vec<(f32, f32, u32)>,    //pos_x, pos_y,radius
 }
 
 impl Player {
     pub fn new(left_input_box: AABBox, right_input_box: AABBox, color: GameColor,
                start_pos: (f32, f32), radius: u32, angle: f32, id: u8) -> Self {
         let a = angle * (PI) / 180.0;
-        Self {
+
+        let mut s = Self {
             input_left: InputRegion::new(left_input_box),
             input_right: InputRegion::new(right_input_box),
             pos: start_pos,
@@ -76,7 +78,10 @@ impl Player {
             speed: 1.0,
             radius,
             buffs: Vec::new(),
-        }
+            trace: Vec::new(),
+        };
+        s.trace.push( (start_pos.0, start_pos.1, radius) );
+        s
     }
 
     pub fn get_player_input(&self, touches: &[Point]) -> PlayerInput {
@@ -107,7 +112,7 @@ impl Player {
         playing_field.store(circle_iter, self.id);
     }
 
-    fn update_pos(&mut self) {
+    fn update_pos(&mut self, trace_update: bool) {
         let speed = self.buffs
                         .iter()
                         .fold(self.speed, |acc, func| (func.change_speed)(acc));
@@ -124,6 +129,10 @@ impl Player {
             new_y = 0.5;
         }
         self.pos = (new_x, new_y);
+        
+        if trace_update {
+            self.trace.push( (self.pos.0, self.pos.1, self.radius) );
+        }
     }
 
     fn update_buffs(&mut self) {
@@ -141,16 +150,19 @@ impl Player {
     pub fn act(&mut self, touches: &[Point]) {
         let d = self.buffs.iter().fold(5.0, |acc, func| (func.change_rotation)(acc));
         let a = d * (PI) / 180.0;
+        let mut trace_update: bool = false;
         match self.get_player_input(touches) {
             PlayerInput::Left => {
                 self.direction = self.direction.rotate(-a);
+                trace_update = true;
             },
             PlayerInput::Right => {
                 self.direction = self.direction.rotate(a);
+                trace_update = true;
             },
             _ => {},
         }
-        self.update_pos();
+        self.update_pos(trace_update);
         self.update_buffs();
     }
 

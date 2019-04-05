@@ -2,20 +2,19 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 use stm32f7_discovery::{
-    system_clock::self,
+    // system_clock::self,
     lcd::{HEIGHT, WIDTH}
 };
 use embedded_graphics::{
     drawable::Pixel,
 };
-use crate::geometry::Point;
+// use crate::geometry::Point;
 use crate::display::GameColor;
 
 pub struct PlayingField{
     id_field: [[ (u8); HEIGHT]; WIDTH],
     pub collision : bool,
-    // ticks : Vec<Vec<u8>>,                        Option 1: 2D Array Option 2: 2D Vectors
-    // ticks_field : [[ (u8); HEIGHT]; WIDTH],            
+    // collision_ignore : [[ (bool); HEIGHT]; WIDTH],            
     collisions : Vec<Collision>,
 }
 
@@ -26,15 +25,9 @@ pub struct Collision{
 
 impl PlayingField{
     pub fn new() -> Self {
-        // let mut v_ticks = Vec::new();
-        // v_ticks.resize( HEIGHT, Vec::new() );
-        // for i in 0..HEIGHT {
-        //     v_ticks[i].resize(WIDTH, 0);
-        // }
-        // println!("...");
-
         Self{
             id_field: [[0; HEIGHT]; WIDTH],
+            // collision_ignore: [[false; HEIGHT]; WIDTH],
             collision: false,
             collisions: Vec::new(),
             // ticks_field : [[0; HEIGHT]; WIDTH],
@@ -60,11 +53,12 @@ impl PlayingField{
                 
                 self.collision = true;
                 println!("collision");
-                old_ids.push(old_id);
-                self.collisions.push( Collision{old_id, new_id} );
+                // old_ids.push(old_id);
+                // self.collisions.push( Collision{old_id, new_id} );
             } 
             
             self.id_field[coord.0 as usize][coord.1 as usize] = new_id ;
+            // self.collision_ignore[coord.0 as usize][coord.1 as usize] = true;
             // self.ticks[coord.0 as usize][coord.1 as usize] = ticks_ as u8;
         }
 

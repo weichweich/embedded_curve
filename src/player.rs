@@ -14,9 +14,13 @@ use crate::playingfield::PlayingField;
 
 
 pub trait Collide<T> {
-    fn collides_with<F: Framebuffer>(&mut self, incoming: &mut T, 
-                                     display: &mut LcdDisplay<F>);
+    fn collides_with(&self, incoming: &T) -> bool;
 }
+
+pub trait CollideSelf {
+    fn collides(&self) -> bool;
+}
+
 
 pub enum PlayerInput {
     Left,
@@ -155,16 +159,20 @@ impl Player {
     }
 }
 
+impl CollideSelf for Player {
+    fn collides(&self) -> bool {
+        false
+    }
+}
+
 impl<T: Buff> Collide<T> for Player {
-    fn collides_with<F: Framebuffer>(&mut self, incoming: &mut T, display: &mut LcdDisplay<F>) {
-        if incoming.clear_screen() {
-            display.clear();
-        }
-        incoming.apply_player(self);
+    fn collides_with(&self, incoming: &T) -> bool {
+        false
     }
 }
 
 impl Collide<Player> for Player {
-    fn collides_with<F: Framebuffer>(&mut self, incoming: &mut Player, display: &mut LcdDisplay<F>) {
+    fn collides_with(&self, incoming: &Player) -> bool {
+        false
     }
 }

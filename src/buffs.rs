@@ -3,7 +3,6 @@ use crate::display::{
     GameColor
 };
 use embedded_graphics::{
-    prelude::*,
     coord::Coord,
 };
 use crate::geometry::ImgIterator;
@@ -32,13 +31,12 @@ pub struct PlayerBuff {
 
 pub struct FastPlayerBuffSprite {
     pos: Coord,
-    id: u8,
 }
 
 impl FastPlayerBuffSprite {
-    pub fn new(pos: Coord, id: u8) -> Self {
+    pub fn new(pos: Coord) -> Self {
         FastPlayerBuffSprite {
-            pos, id,
+            pos,
         }
     }
 }
@@ -68,13 +66,12 @@ impl Buff for FastPlayerBuffSprite {
 
 pub struct ClearBuff {
     pos: Coord,
-    id: u8,
 }
 
 impl ClearBuff {
-    pub fn new(pos: Coord, id: u8) -> Self {
+    pub fn new(pos: Coord) -> Self {
         Self {
-            pos, id,
+            pos,
         }
     }
 
@@ -94,12 +91,11 @@ impl Buff for ClearBuff {
 
 pub struct ChangeDirBuff {
     pos: Coord,
-    id: u8,
 }
 
 impl ChangeDirBuff {
-    pub fn new(pos: Coord, id: u8) -> Self {
-        Self {pos, id}
+    pub fn new(pos: Coord) -> Self {
+        Self {pos}
     }
 }
 
@@ -129,12 +125,11 @@ impl Buff for ChangeDirBuff {
 
 pub struct SlowBuff {
     pos: Coord,
-    id: u8,
 }
 
 impl SlowBuff {
-    pub fn new(pos: Coord, id: u8) -> Self {
-        Self {pos, id}
+    pub fn new(pos: Coord) -> Self {
+        Self {pos}
     }
 }
 

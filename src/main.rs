@@ -40,7 +40,7 @@ use stm32f7_discovery::{
 };
 
 use geometry::{AABBox, Point};
-use player::Player;
+use player::{Player, Collide, CollideSelf};
 
 use buffs::{Buff, ChangeDirBuff, ClearBuff, FastPlayerBuffSprite, SlowBuff};
 use display::{GameColor, LcdDisplay};
@@ -186,31 +186,28 @@ fn main() -> ! {
         get_rand_num(&mut rng) as f32 % HEIGHT as f32,
     );
     buffs.push(Box::new(
-        FastPlayerBuffSprite::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32), 3)));
+        FastPlayerBuffSprite::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32))));
     let pos_buff = (
         get_rand_num(&mut rng) as f32 % WIDTH as f32,
         get_rand_num(&mut rng) as f32 % HEIGHT as f32,
     );
     buffs.push(Box::new(
-        ClearBuff::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32), 4)));
+        ClearBuff::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32))));
     let pos_buff = (
         get_rand_num(&mut rng) as f32 % WIDTH as f32,
         get_rand_num(&mut rng) as f32 % HEIGHT as f32,
     );
     buffs.push(Box::new(
-        ChangeDirBuff::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32), 5)));
+        ChangeDirBuff::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32))));
     let pos_buff = (
         get_rand_num(&mut rng) as f32 % WIDTH as f32,
         get_rand_num(&mut rng) as f32 % HEIGHT as f32,
     );
     buffs.push(Box::new(
-        SlowBuff::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32), 6)));
+        SlowBuff::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32))));
 
     let mut last_curve_update = system_clock::ticks();
-    // let mut opt_last_point = None;
     let mut playingfield = PlayingField::new();
-    let player_thing = system_clock::ticks();
-    let mut thing = 0;
 
     loop {
         // poll for new touch data
@@ -235,13 +232,20 @@ fn main() -> ! {
 
             last_curve_update = ticks;
         }
-        // for c in collisions {
-        //     if c.old is player and c.new is player {
-        //         old_player.collide_with(new_player)
-        //     } else if c.old is player and c.new is buff {
-        //         old_player.collide_with(buff)
-        //     }
-        // }
+        for i in 1..players.len() {
+            let (pis, pjs) = players.split_at(i);
+            let pi = pis.last().unwrap();
+
+            if pi.collides() {
+                // TODO handle collision with self
+            } else  { 
+                for pj in pjs {
+                    if pi.collides_with(pj) {
+                        // TODO: Handle player collision
+                    }
+                }
+            }
+        }
     }
 }
 

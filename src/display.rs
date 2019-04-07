@@ -2,7 +2,6 @@ use embedded_graphics::{
     Drawing,
     drawable::Pixel,
     pixelcolor::PixelColor,
-    coord::Coord,
 };
 
 use stm32f7_discovery::lcd::{Framebuffer, Layer, Color, WIDTH, HEIGHT};

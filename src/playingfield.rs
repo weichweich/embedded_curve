@@ -48,7 +48,7 @@ impl PlayingField{
         }
     }
 
-    pub fn store<T>(&mut self, item_pixels: T, id: u32)
+    pub fn store<T>(&mut self, item_pixels: T, id: u8)
     where
         T: Iterator<Item = Pixel<GameColor>>
     {   

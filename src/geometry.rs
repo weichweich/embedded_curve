@@ -1,3 +1,7 @@
+use embedded_graphics::prelude::Coord;
+use crate::display::GameColor;
+use embedded_graphics::prelude::Pixel;
+use embedded_graphics::prelude::UnsignedCoord;
 use core::ops::{Add, Sub};
 use libm::{cosf, sinf};
 
@@ -107,4 +111,66 @@ impl AABBox {
         (self.top_left.x <= point.x && self.top_left.y <= point.y
         && point.x <= self.bottom_right.x && point.y <= self.bottom_right.y)
     }
+}
+
+pub struct ImgIterator {
+    data: &'static [u8],
+    i: usize,
+    width: u32,
+    pos: Coord,
+    r: Option<u8>,
+    g: Option<u8>,
+    x: i32,
+    y: i32,
+
+}
+
+impl ImgIterator {
+    pub fn new(data: &'static [u8], width: u32, pos: Coord) -> ImgIterator {
+        Self {
+            data,
+            width,
+            pos,
+            i: 0,
+            r: None,
+            g: None,
+            x: 0,
+            y: 0,
+        }
+    }
+}
+
+impl Iterator for ImgIterator {
+    type Item = Pixel<GameColor>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if self.i >= self.data.len() {
+                return None;
+            }
+            let item = self.data[self.i];
+            self.i += 1;
+            match (self.r, self.g) {
+                (None, _) => self.r = Some(item),
+                (Some(_), None) => self.g = Some(item),
+                (Some(ri), Some(gi)) => {
+                    let color = u32::from(ri).rotate_left(16)
+                                | u32::from(gi).rotate_left(8)
+                                | u32::from(item);
+                    let pc = Pixel(UnsignedCoord::new((self.pos[0] + self.x) as u32,
+                                                      (self.pos[1] + self.y) as u32), 
+                                   GameColor{value:color});
+                    self.x += 1;
+                    if self.x >= self.width as i32 {
+                        self.x = 0;
+                        self.y += 1;
+                    }
+                    self.r = None;
+                    self.g = None;
+                    break Some(pc);
+                }
+            }
+        }
+    }
+
 }

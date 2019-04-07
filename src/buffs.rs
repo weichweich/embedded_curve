@@ -1,9 +1,12 @@
-use crate::player::Player;
+use crate::player::{Player};
 use crate::display::{
-    GameColor, LcdDisplay
+    GameColor
 };
-use stm32f7_discovery::lcd::Framebuffer;
-use embedded_graphics::coord::Coord;
+use embedded_graphics::{
+    prelude::*,
+    coord::Coord,
+};
+use crate::geometry::ImgIterator;
 
 
 const IMG_FAST :[u8; 10*10*3] = *include_bytes!("fast.data");
@@ -14,8 +17,8 @@ const IMG_SLOW :[u8; 10*10*3] = *include_bytes!("slow.data");
 
 pub trait Buff {
     fn apply_player(&self, player: &mut Player);
-    fn apply_display<F: Framebuffer>(&self, display: &mut LcdDisplay<F>);
-    fn draw<F: Framebuffer>(&self, display: &mut LcdDisplay<F>);
+    fn clear_screen(&self) -> bool;
+    fn draw(&self) -> ImgIterator;
 }
 
 pub struct PlayerBuff {
@@ -25,14 +28,17 @@ pub struct PlayerBuff {
     pub change_color: fn(GameColor) -> GameColor,
 }
 
+// Fast Buff
+
 pub struct FastPlayerBuffSprite {
     pos: Coord,
+    id: u8,
 }
 
 impl FastPlayerBuffSprite {
-    pub fn new(pos: Coord) -> Self {
+    pub fn new(pos: Coord, id: u8) -> Self {
         FastPlayerBuffSprite {
-            pos,
+            pos, id,
         }
     }
 }
@@ -51,51 +57,54 @@ impl Buff for FastPlayerBuffSprite {
         });
     }
 
-    fn apply_display<F: Framebuffer>(&self, _display: &mut LcdDisplay<F>) {
-    }
+    fn clear_screen(&self) -> bool { false }
 
-    fn draw<F: Framebuffer>(&self, display: &mut LcdDisplay<F>) {
-        display.draw_bmp_rgb8(self.pos, 10, 10, &IMG_FAST);
+    fn draw(&self) -> ImgIterator {
+        ImgIterator::new(&IMG_FAST, 10, self.pos)
     }
 }
 
-pub struct FastPlayerBuff {}
+// Clear Buff
 
 pub struct ClearBuff {
     pos: Coord,
+    id: u8,
 }
 
 impl ClearBuff {
-    pub fn new(pos: Coord) -> Self {
+    pub fn new(pos: Coord, id: u8) -> Self {
         Self {
-            pos,
+            pos, id,
         }
     }
+
 }
 
 impl Buff for ClearBuff {
     fn apply_player(&self, _player: &mut Player) {}
 
-    fn apply_display<F: Framebuffer>(&self, display: &mut LcdDisplay<F>) {
-        display.clear();
-    }
+    fn clear_screen(&self) -> bool { true }
 
-    fn draw<F: Framebuffer>(&self, display: &mut LcdDisplay<F>) {
-        display.draw_bmp_rgb8(self.pos, 10, 10, &IMG_CLEAR);
+    fn draw(&self) -> ImgIterator {
+        ImgIterator::new(&IMG_CLEAR, 10, self.pos)
     }
 }
+
+// Change direction Buff
 
 pub struct ChangeDirBuff {
     pos: Coord,
+    id: u8,
 }
 
 impl ChangeDirBuff {
-    pub fn new(pos: Coord) -> Self {
-        Self {pos}
+    pub fn new(pos: Coord, id: u8) -> Self {
+        Self {pos, id}
     }
 }
 
 impl Buff for ChangeDirBuff {
+
     fn apply_player(&self, player: &mut Player) {
         fn change_color(color: GameColor) -> GameColor {color}
         fn change_rotation(rotation: f32) -> f32 {360_f32-rotation}
@@ -109,20 +118,23 @@ impl Buff for ChangeDirBuff {
         });
     }
 
-    fn apply_display<F: Framebuffer>(&self, _display: &mut LcdDisplay<F>) {}
+    fn clear_screen(&self) -> bool { false }
 
-    fn draw<F: Framebuffer>(&self, display: &mut LcdDisplay<F>) {
-        display.draw_bmp_rgb8(self.pos, 10, 10, &IMG_CH_DIR);
+    fn draw(&self) -> ImgIterator {
+        ImgIterator::new(&IMG_CH_DIR, 10, self.pos)
     }
 }
 
+// Slow Player Buff
+
 pub struct SlowBuff {
     pos: Coord,
+    id: u8,
 }
 
 impl SlowBuff {
-    pub fn new(pos: Coord) -> Self {
-        Self {pos}
+    pub fn new(pos: Coord, id: u8) -> Self {
+        Self {pos, id}
     }
 }
 
@@ -140,9 +152,9 @@ impl Buff for SlowBuff {
         });
     }
 
-    fn apply_display<F: Framebuffer>(&self, _display: &mut LcdDisplay<F>) {}
+    fn clear_screen(&self) -> bool { false }
 
-    fn draw<F: Framebuffer>(&self, display: &mut LcdDisplay<F>) {
-        display.draw_bmp_rgb8(self.pos, 10, 10, &IMG_SLOW);
+    fn draw(&self) -> ImgIterator {
+        ImgIterator::new(&IMG_SLOW, 10, self.pos)
     }
 }

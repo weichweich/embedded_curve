@@ -13,14 +13,18 @@ extern crate stm32f7;
 #[macro_use]
 extern crate stm32f7_discovery;
 
-pub mod geometry;
-pub mod player;
+pub mod buffs;
 pub mod display;
 pub mod draw;
+pub mod geometry;
+pub mod player;
 pub mod playingfield;
-pub mod buffs;
 
-use alloc::vec::Vec;
+use embedded_graphics::Drawing;
+use alloc::{
+    vec::Vec,
+    boxed::Box
+};
 use alloc_cortex_m::CortexMHeap;
 use core::alloc::Layout as AllocLayout;
 use core::panic::PanicInfo;
@@ -29,25 +33,19 @@ use stm32f7::stm32f7x6::{CorePeripherals, Peripherals};
 use stm32f7_discovery::{
     gpio::{GpioPort, OutputPin},
     init,
-    system_clock::{self, Hz},
-    lcd::{self, Color, WIDTH, HEIGHT},
-    touch,
+    lcd::{self, Color, HEIGHT, WIDTH},
     random::Rng,
+    system_clock::{self, Hz},
+    touch,
 };
 
-use geometry::{
-    Point, AABBox
-};
-use player::{
-    Player,
-};
+use geometry::{AABBox, Point};
+use player::Player;
 
-use display::{LcdDisplay, GameColor};
-use playingfield::{PlayingField};
-use buffs::{
-    FastPlayerBuffSprite, Buff, ClearBuff, ChangeDirBuff, SlowBuff
-};
+use buffs::{Buff, ChangeDirBuff, ClearBuff, FastPlayerBuffSprite, SlowBuff};
+use display::{GameColor, LcdDisplay};
 use embedded_graphics::coord::Coord;
+use playingfield::PlayingField;
 
 const HEAP_SIZE: usize = 1024 * 1024; // in bytes
 
@@ -105,7 +103,9 @@ fn main() -> ! {
 
     // Make `println` print to the LCD
     lcd::init_stdout(layer_2);
-    if cfg!(debug_assertions) {println!("Start Game");}
+    if cfg!(debug_assertions) {
+        println!("Start Game");
+    }
 
     println!("{}", HEAP_SIZE);
 
@@ -123,14 +123,28 @@ fn main() -> ! {
 
     let mut display = LcdDisplay::new(&mut layer_1);
 
-    let top_left = Point { x: 0, y: 0};
-    let top_mid = Point { x: WIDTH/ 2, y: 0};
-    let mid_mid = Point { x: WIDTH / 2, y: HEIGHT / 2};
-    let bottom_mid = Point { x: WIDTH / 2, y: HEIGHT};
-    let bottom_right = Point { x: WIDTH, y: HEIGHT};
-    let left_mid = Point { x: 0, y: HEIGHT / 2 };
-    let right_mid = Point { x: WIDTH, y: HEIGHT / 2 };
-    
+    let top_left = Point { x: 0, y: 0 };
+    let top_mid = Point { x: WIDTH / 2, y: 0 };
+    let mid_mid = Point {
+        x: WIDTH / 2,
+        y: HEIGHT / 2,
+    };
+    let bottom_mid = Point {
+        x: WIDTH / 2,
+        y: HEIGHT,
+    };
+    let bottom_right = Point {
+        x: WIDTH,
+        y: HEIGHT,
+    };
+    let left_mid = Point {
+        x: 0,
+        y: HEIGHT / 2,
+    };
+    let right_mid = Point {
+        x: WIDTH,
+        y: HEIGHT / 2,
+    };
 
     let pos_a = (
         get_rand_num(&mut rng) as f32 % WIDTH as f32,
@@ -144,37 +158,53 @@ fn main() -> ! {
     let angle_b = get_rand_num(&mut rng) as f32 % 360_f32;
 
     //ID for Objects 0 = default and 1..255 for objects!!!
-    let mut player_a = Player::new(
+    let player_a = Player::new(
         AABBox::new(left_mid, bottom_mid),
-        AABBox::new(top_left, mid_mid), 
-        GameColor{value:0x0000FF}, pos_a,
-        2, angle_a, 1);
-    let mut player_b = Player::new(
-        AABBox::new(top_mid, right_mid), 
+        AABBox::new(top_left, mid_mid),
+        GameColor { value: 0x0000FF },
+        pos_a,
+        2,
+        angle_a,
+        1,
+    );
+    let player_b = Player::new(
+        AABBox::new(top_mid, right_mid),
         AABBox::new(mid_mid, bottom_right),
-        GameColor{value: 0x00FF00}, pos_b, 
-        2, angle_b, 2);
+        GameColor { value: 0x00FF00 },
+        pos_b,
+        2,
+        angle_b,
+        2,
+    );
+    let mut players: Vec<Player> = Vec::new();
+    players.push(player_a);
+    players.push(player_b);
 
+    let mut buffs: Vec<Box<Buff>> = Vec::new();
     let pos_buff = (
         get_rand_num(&mut rng) as f32 % WIDTH as f32,
         get_rand_num(&mut rng) as f32 % HEIGHT as f32,
     );
-    let fp_buff = FastPlayerBuffSprite::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32));
+    buffs.push(Box::new(
+        FastPlayerBuffSprite::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32), 3)));
     let pos_buff = (
         get_rand_num(&mut rng) as f32 % WIDTH as f32,
         get_rand_num(&mut rng) as f32 % HEIGHT as f32,
     );
-    let c_buff = ClearBuff::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32));
+    buffs.push(Box::new(
+        ClearBuff::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32), 4)));
     let pos_buff = (
         get_rand_num(&mut rng) as f32 % WIDTH as f32,
         get_rand_num(&mut rng) as f32 % HEIGHT as f32,
     );
-    let cd_buff = ChangeDirBuff::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32));
+    buffs.push(Box::new(
+        ChangeDirBuff::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32), 5)));
     let pos_buff = (
         get_rand_num(&mut rng) as f32 % WIDTH as f32,
         get_rand_num(&mut rng) as f32 % HEIGHT as f32,
     );
-    let slow_buff = SlowBuff::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32));
+    buffs.push(Box::new(
+        SlowBuff::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32), 6)));
 
     let mut last_curve_update = system_clock::ticks();
     // let mut opt_last_point = None;
@@ -186,55 +216,42 @@ fn main() -> ! {
         // poll for new touch data
         let mut touches: Vec<Point> = Vec::new();
         for touch in &touch::touches(&mut i2c_3).unwrap() {
-            touches.push(Point{x: touch.x as usize, y: touch.y as usize});
+            touches.push(Point {
+                x: touch.x as usize,
+                y: touch.y as usize,
+            });
         }
         // println!("hoolahoop");
         let ticks = system_clock::ticks();
-        if  !playingfield.collision && ticks - last_curve_update >= 3 {
-            player_b.act(&touches);
-            player_a.act(&touches);
-            player_a.draw(&mut display, &mut playingfield);
-            player_b.draw(&mut display, &mut playingfield);
+        if !playingfield.collision && ticks - last_curve_update >= 3 {
+            for p in &mut players {
+                p.act(&touches);
+                p.draw(&mut display, &mut playingfield);
+            }
 
-            fp_buff.draw(&mut display);
-            c_buff.draw(&mut display);
-            cd_buff.draw(&mut display);
-            slow_buff.draw(&mut display);
-            
+            for p in &mut buffs {
+                display.draw(p.draw());
+            }
+
             last_curve_update = ticks;
         }
-        if ticks - player_thing >= 100 && thing == 0 {
-            fp_buff.apply_display(&mut display);
-            fp_buff.apply_player(&mut player_a);
-            thing = 1;
-            println!("fast");
-        } else if ticks - player_thing >= 400 && thing == 1 {
-            c_buff.apply_display(&mut display);
-            c_buff.apply_player(&mut player_a);
-            thing = 2;
-            println!("clear");
-        } else if ticks - player_thing >= 800 && thing == 2 {
-            cd_buff.apply_display(&mut display);
-            cd_buff.apply_player(&mut player_a);
-            thing = 3;
-            println!("change dir");
-        } else if ticks - player_thing >= 1200 && thing == 3 {
-            slow_buff.apply_display(&mut display);
-            slow_buff.apply_player(&mut player_a);
-            thing = 4;
-            println!("slow");
-        }
+        // for c in collisions {
+        //     if c.old is player and c.new is player {
+        //         old_player.collide_with(new_player)
+        //     } else if c.old is player and c.new is buff {
+        //         old_player.collide_with(buff)
+        //     }
+        // }
     }
 }
 
 fn get_rand_num(rnd: &mut Rng) -> u32 {
     loop {
         match rnd.poll_and_get() {
-            Err(_) => {},
+            Err(_) => {}
             Ok(num) => {
-                if cfg!(debug_assertions) {println!("rand ready. First num: {}", num);}
-                break num
-            },
+                break num;
+            }
         }
     }
 }

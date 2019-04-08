@@ -2,10 +2,10 @@ use embedded_graphics::prelude::Coord;
 use crate::display::GameColor;
 use embedded_graphics::prelude::Pixel;
 use embedded_graphics::prelude::UnsignedCoord;
-use core::ops::{Add, Sub};
+use core::ops::{Add, Sub, Mul};
 use libm::{cosf, sinf};
 
-#[derive(Copy,Clone)]
+#[derive(Copy,Clone, Debug)]
 pub struct Vector2D {
     pub x: f32,
     pub y: f32,
@@ -19,6 +19,24 @@ impl Vector2D {
             x: ca * self.x - sa * self.y,
             y: sa * self.x + ca * self.y,
         }
+    }
+
+    pub fn length(self) -> f32 {
+        libm::sqrtf(self.x*self.x + self.y*self.y)
+    }
+
+    pub fn dot(self, other: Vector2D) -> f32 {
+        self.x*other.x + self.y*other.y
+    }
+
+    pub fn normalized(self) -> Vector2D {
+        let l = self.length();
+        Vector2D {x: self.x/l, y:self.y/l}
+    }
+
+    pub fn distance(self, other: Vector2D) -> f32 {
+        let vec = self - other;
+        libm::sqrtf(vec.dot(vec))
     }
 }
 
@@ -59,6 +77,14 @@ impl Sub for Vector2D {
     }
 }
 
+impl Mul<f32> for Vector2D {
+    type Output = Vector2D;
+
+    fn mul(self, scalar: f32) -> Vector2D {
+        Vector2D {x: self.x*scalar, y: self.y * scalar}
+    }
+}
+
 #[derive(Copy,Clone)]
 pub struct Point {
     pub x: usize,
@@ -90,6 +116,7 @@ impl Add<Vector2D> for Point {
         }
     }
 }
+
 
 #[derive(Copy,Clone)]
 pub struct AABBox {

@@ -1,18 +1,24 @@
+use libm;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{Circle, Line};
 use stm32f7_discovery::lcd::{Framebuffer, HEIGHT, WIDTH};
 use core::f32::consts::PI;
-use alloc::vec::Vec;
 use nalgebra::{Vector2, dot, normalize};
-use libm;
+use alloc::{
+    vec::Vec,
+    boxed::Box
+};
 
 use crate::geometry::{
     AABBox, Point, Vector2D
 };
 use crate::display::{LcdDisplay, GameColor};
 use crate::buffs::{PlayerBuff, Buff};
-
 use crate::playingfield::PlayingField;
+
+
+pub const PAD_LEFT: f32 = 10_f32;
+pub const PAD_RIGHT: f32 = 10_f32;
 
 
 pub trait Collide<T> {
@@ -104,9 +110,12 @@ impl Player {
         let color = self.buffs
                         .iter()
                         .fold(self.color, |acc, func| (func.change_color)(acc));
+        let radius = self.buffs
+                         .iter()
+                         .fold(self.radius as f32, |acc, func| (func.change_radius)(acc));
 
         let circle_iter = 
-        Circle::new(Coord::new(self.pos.0 as i32, self.pos.1 as i32), self.radius)
+        Circle::new(Coord::new(self.pos.0 as i32, self.pos.1 as i32), libm::roundf(radius) as u32)
             .with_stroke(Some(color))
             .with_fill(Some(color))
             .into_iter();
@@ -126,14 +135,13 @@ impl Player {
         let speed = self.buffs
                         .iter()
                         .fold(self.speed, |acc, func| (func.change_speed)(acc));
-        let mut new_x = (self.pos.0 + self.direction.x * speed) as f32;
+        let mut new_x = (self.pos.0 + self.direction.x * speed)  as f32;
         let mut new_y = (self.pos.1 + self.direction.y * speed) as f32;
-        
-        if new_x < 0.0 {
-            new_x = WIDTH as f32 - 1.0;
+        if new_x < PAD_LEFT {
+            new_x = WIDTH as f32 - PAD_RIGHT;
             new_trace_segment = true;
-        } else if new_x > WIDTH as f32 {
-            new_x = 0.5;
+        } else if new_x > (WIDTH as f32 - PAD_RIGHT) {
+            new_x = PAD_LEFT + 1_f32;
             new_trace_segment = true;
         }
         if new_y < 0.0 {
@@ -208,9 +216,14 @@ impl CollideSelf for Player {
     }
 }
 
-impl<T: Buff> Collide<T> for Player {
-    fn collides_with(&self, incoming: &T) -> bool {
-        false
+impl Collide<Box<Buff>> for Player {
+    fn collides_with(&self, incoming: &Box<Buff>) -> bool {
+        let b_pos = (*incoming).get_pos();
+        let dist_x = libm::fabsf(self.pos.0 - b_pos[0] as f32);
+        let dist_y = libm::fabsf(self.pos.1 - b_pos[1] as f32);
+        let dist = libm::sqrtf(dist_x*dist_x + dist_y*dist_y);
+
+        ((self.radius + 10) as f32) >= dist
     }
 }
 

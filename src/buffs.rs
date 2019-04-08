@@ -8,10 +8,13 @@ use embedded_graphics::{
 use crate::geometry::ImgIterator;
 
 
-const IMG_FAST :[u8; 10*10*3] = *include_bytes!("fast.data");
-const IMG_CLEAR :[u8; 10*10*3] = *include_bytes!("clear.data");
-const IMG_CH_DIR :[u8; 10*10*3] = *include_bytes!("dir_change.data");
-const IMG_SLOW :[u8; 10*10*3] = *include_bytes!("slow.data");
+const IMG_FAST: [u8; 10*10*3] = *include_bytes!("fast.data");
+const IMG_CLEAR: [u8; 10*10*3] = *include_bytes!("clear.data");
+const IMG_CH_DIR: [u8; 10*10*3] = *include_bytes!("dir_change.data");
+const IMG_SLOW: [u8; 10*10*3] = *include_bytes!("slow.data");
+const IMG_SMALL: [u8; 10*10*3] = *include_bytes!("smaller.data");
+const IMG_BIG: [u8; 10*10*3] = *include_bytes!("bigger.data");
+const IMG_COLOR: [u8; 10*10*3] = *include_bytes!("color.data");
 
 
 pub trait Buff {
@@ -19,6 +22,7 @@ pub trait Buff {
     fn clear_screen(&self) -> bool;
     fn draw(&self) -> ImgIterator;
     fn aabb(&self) -> (Coord, Coord);
+    fn get_pos(&self) -> Coord;
 }
 
 pub struct PlayerBuff {
@@ -26,6 +30,7 @@ pub struct PlayerBuff {
     pub change_rotation: fn(f32) -> f32,
     pub change_speed: fn(f32) -> f32,
     pub change_color: fn(GameColor) -> GameColor,
+    pub change_radius: fn(f32) -> f32,
 }
 
 // Fast Buff
@@ -47,12 +52,14 @@ impl Buff for FastPlayerBuffSprite {
         fn change_color(color: GameColor) -> GameColor {color}
         fn change_rotation(rotation: f32) -> f32 {rotation}
         fn change_speed(speed: f32) -> f32 {speed + 1.0}
+        fn change_radius(r: f32) -> f32 {r}
 
         player.add_buff(PlayerBuff{
             timeout: 60*30,//30 sec
             change_rotation,
             change_color,
             change_speed,
+            change_radius,
         });
     }
 
@@ -63,7 +70,12 @@ impl Buff for FastPlayerBuffSprite {
     }
 
     fn aabb(&self) -> (Coord, Coord){
-        (self.pos, self.pos)
+        let low_right = Coord::new(self.pos[0]+10, self.pos[1]+10);
+        (self.pos, low_right)
+    }
+
+    fn get_pos(&self) -> Coord {
+        self.pos
     }
 }
 
@@ -97,6 +109,10 @@ impl Buff for ClearBuff {
         let low_right = Coord::new(self.pos[0]+10, self.pos[1]+10);
         (self.pos, low_right)
     }
+
+    fn get_pos(&self) -> Coord {
+        self.pos
+    }
 }
 
 // Change direction Buff
@@ -117,12 +133,14 @@ impl Buff for ChangeDirBuff {
         fn change_color(color: GameColor) -> GameColor {color}
         fn change_rotation(rotation: f32) -> f32 {360_f32-rotation}
         fn change_speed(speed: f32) -> f32 {speed}
+        fn change_radius(r: f32) -> f32 {r}
 
-        player.add_buff(PlayerBuff{
+        player.add_buff(PlayerBuff {
             timeout: 60*10,//10 secs
             change_rotation,
             change_color,
             change_speed,
+            change_radius
         });
     }
 
@@ -133,7 +151,12 @@ impl Buff for ChangeDirBuff {
     }
 
     fn aabb(&self) -> (Coord, Coord){
-        (self.pos, self.pos)
+        let low_right = Coord::new(self.pos[0]+10, self.pos[1]+10);
+        (self.pos, low_right)
+    }
+
+    fn get_pos(&self) -> Coord {
+        self.pos
     }
 }
 
@@ -154,12 +177,14 @@ impl Buff for SlowBuff {
         fn change_color(color: GameColor) -> GameColor {color}
         fn change_rotation(rotation: f32) -> f32 {rotation}
         fn change_speed(speed: f32) -> f32 {speed - 0.5}
+        fn change_radius(r: f32) -> f32 {r}
 
-        player.add_buff(PlayerBuff{
-            timeout: 60*5,// 5 secs
+        player.add_buff(PlayerBuff {
+            timeout: 60 * 15,// 5 secs
             change_rotation,
             change_color,
             change_speed,
+            change_radius,
         });
     }
 
@@ -170,6 +195,145 @@ impl Buff for SlowBuff {
     }
 
     fn aabb(&self) -> (Coord, Coord){
-        (self.pos, self.pos)
+        let low_right = Coord::new(self.pos[0]+10, self.pos[1]+10);
+        (self.pos, low_right)
+    }
+
+    fn get_pos(&self) -> Coord {
+        self.pos
+    }
+}
+
+// BIG Player Buff
+
+pub struct BigBuff {
+    pos: Coord,
+}
+
+impl BigBuff {
+    pub fn new(pos: Coord) -> Self {
+        Self {pos}
+    }
+}
+
+impl Buff for BigBuff {
+    fn apply_player(&self, player: &mut Player) {
+        fn change_color(color: GameColor) -> GameColor {color}
+        fn change_rotation(rotation: f32) -> f32 {rotation}
+        fn change_speed(speed: f32) -> f32 {speed}
+        fn change_radius(r: f32) -> f32 {r * 1.5}
+
+        player.add_buff(PlayerBuff {
+            timeout: 60*30,
+            change_rotation,
+            change_color,
+            change_speed,
+            change_radius,
+        });
+    }
+
+    fn clear_screen(&self) -> bool { false }
+
+    fn draw(&self) -> ImgIterator {
+        ImgIterator::new(&IMG_BIG, 10, self.pos)
+    }
+
+    fn aabb(&self) -> (Coord, Coord){
+        let low_right = Coord::new(self.pos[0]+10, self.pos[1]+10);
+        (self.pos, low_right)
+    }
+
+    fn get_pos(&self) -> Coord {
+        self.pos
+    }
+}
+
+// Small Player Buff
+
+pub struct SmallBuff {
+    pos: Coord,
+}
+
+impl SmallBuff {
+    pub fn new(pos: Coord) -> Self {
+        Self {pos}
+    }
+}
+
+impl Buff for SmallBuff {
+    fn apply_player(&self, player: &mut Player) {
+        fn change_color(color: GameColor) -> GameColor {color}
+        fn change_rotation(rotation: f32) -> f32 {rotation}
+        fn change_speed(speed: f32) -> f32 {speed}
+        fn change_radius(r: f32) -> f32 {r * 0.5}
+
+        player.add_buff(PlayerBuff{
+            timeout: 60*30,// 5 secs
+            change_rotation,
+            change_color,
+            change_speed,
+            change_radius,
+        });
+    }
+
+    fn clear_screen(&self) -> bool { false }
+
+    fn draw(&self) -> ImgIterator {
+        ImgIterator::new(&IMG_SMALL, 10, self.pos)
+    }
+
+    fn aabb(&self) -> (Coord, Coord){
+        let low_right = Coord::new(self.pos[0]+10, self.pos[1]+10);
+        (self.pos, low_right)
+    }
+
+    fn get_pos(&self) -> Coord {
+        self.pos
+    }
+}
+
+// Color Player Buff
+
+pub struct ColorBuff {
+    pos: Coord,
+}
+
+impl ColorBuff {
+    pub fn new(pos: Coord) -> Self {
+        Self {pos}
+    }
+}
+
+impl Buff for ColorBuff {
+    fn apply_player(&self, player: &mut Player) {
+        fn change_color(color: GameColor) -> GameColor {
+            GameColor{value: color.value / 2}
+        }
+        fn change_rotation(rotation: f32) -> f32 {rotation}
+        fn change_speed(speed: f32) -> f32 {speed}
+        fn change_radius(r: f32) -> f32 {r}
+
+        player.add_buff(PlayerBuff{
+            timeout: 60*60,// 5 secs
+            change_rotation,
+            change_color,
+            change_speed,
+            change_radius,
+        });
+    }
+
+    fn clear_screen(&self) -> bool { false }
+
+    fn draw(&self) -> ImgIterator {
+        ImgIterator::new(&IMG_COLOR, 10, self.pos)
+    }
+
+    fn aabb(&self) -> (Coord, Coord){
+        let low_right = Coord::new(self.pos[0]+10, self.pos[1]+10);
+        (self.pos, low_right)
+    }
+
+    fn get_pos(&self) -> Coord {
+        self.pos
     }
 }

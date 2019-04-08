@@ -19,6 +19,7 @@ pub trait Buff {
     fn clear_screen(&self) -> bool;
     fn draw(&self) -> ImgIterator;
     fn aabb(&self) -> (Coord, Coord);
+    fn get_pos(&self) -> Coord;
 }
 
 pub struct PlayerBuff {
@@ -63,7 +64,12 @@ impl Buff for FastPlayerBuffSprite {
     }
 
     fn aabb(&self) -> (Coord, Coord){
-        (self.pos, self.pos)
+        let low_right = Coord::new(self.pos[0]+10, self.pos[1]+10);
+        (self.pos, low_right)
+    }
+
+    fn get_pos(&self) -> Coord {
+        self.pos
     }
 }
 
@@ -96,6 +102,10 @@ impl Buff for ClearBuff {
     fn aabb(&self) -> (Coord, Coord){
         let low_right = Coord::new(self.pos[0]+10, self.pos[1]+10);
         (self.pos, low_right)
+    }
+
+    fn get_pos(&self) -> Coord {
+        self.pos
     }
 }
 
@@ -133,7 +143,12 @@ impl Buff for ChangeDirBuff {
     }
 
     fn aabb(&self) -> (Coord, Coord){
-        (self.pos, self.pos)
+        let low_right = Coord::new(self.pos[0]+10, self.pos[1]+10);
+        (self.pos, low_right)
+    }
+
+    fn get_pos(&self) -> Coord {
+        self.pos
     }
 }
 
@@ -170,6 +185,11 @@ impl Buff for SlowBuff {
     }
 
     fn aabb(&self) -> (Coord, Coord){
-        (self.pos, self.pos)
+        let low_right = Coord::new(self.pos[0]+10, self.pos[1]+10);
+        (self.pos, low_right)
+    }
+
+    fn get_pos(&self) -> Coord {
+        self.pos
     }
 }

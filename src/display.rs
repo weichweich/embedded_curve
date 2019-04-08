@@ -48,7 +48,7 @@ impl PixelColor for GameColor {}
 impl From<u8> for GameColor {
     fn from(other: u8) -> Self {
         GameColor {
-            value: other as u32,
+            value: u32::from(other),
         }
     }
 }

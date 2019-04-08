@@ -16,10 +16,8 @@ extern crate stm32f7_discovery;
 
 pub mod buffs;
 pub mod display;
-pub mod draw;
 pub mod geometry;
 pub mod player;
-pub mod playingfield;
 
 use embedded_graphics::{
     prelude::*,
@@ -53,7 +51,6 @@ use stm32f7_discovery::{
     touch,
     i2c::I2C,
 };
-use nalgebra::{Vector2, dot, normalize};
 
 
 use geometry::{AABBox, Point};
@@ -64,12 +61,11 @@ use buffs::{
     BigBuff, SmallBuff};
 use display::{GameColor, LcdDisplay};
 use embedded_graphics::coord::Coord;
-use playingfield::PlayingField;
 
 const HEAP_SIZE: usize = 1024 * 1024; // in bytes
 
-const C_PLAYER_A: GameColor = GameColor{value: 0x0000FF};
-const C_PLAYER_B: GameColor = GameColor{value: 0x00FF00};
+const C_PLAYER_A: GameColor = GameColor{value: 0x00_00FF};
+const C_PLAYER_B: GameColor = GameColor{value: 0x00_FF00};
 
 const TOP_LEFT: Point = Point { x: 0, y: 0 };
 const TOP_MID: Point = Point { x: WIDTH / 2, y: 0 };
@@ -139,7 +135,7 @@ fn main() -> ! {
     // Initialize the allocator BEFORE you use it
     unsafe { ALLOCATOR.init(rt::heap_start() as usize, HEAP_SIZE) }
 
-    lcd.set_background_color(Color::from_hex(0x000000));
+    lcd.set_background_color(Color::from_hex(0x00_0000));
     let mut layer_1 = lcd.layer_1().unwrap();
     let mut layer_2 = lcd.layer_2().unwrap();
 
@@ -152,15 +148,6 @@ fn main() -> ! {
         println!("Start Game");
         println!("Heap size: {}", HEAP_SIZE);
     }
-
-    // let v1 = Vector2::new(3.0,1.0);
-    // let v2 = Vector2::new(4.0,2.0);
-    // let v3 = Vector2::new(3.0,4.0);
-
-    // let v13 = v3 - v1;
-    // let v12
-
-    // println!("{}", HEAP_SIZE);
 
     let mut i2c_3 = init::init_i2c_3(peripherals.I2C3, &mut rcc);
     i2c_3.test_1();
@@ -186,7 +173,7 @@ fn main() -> ! {
         if (d_ticks as i32) < cooldown {
             display.draw(Font12x16::render_str(&format!("BE READY! FUN STARS IN {} SECONDS!", (cooldown - d_ticks as i32) / 100))
                             .with_stroke(Some(C_PLAYER_A))
-                            .with_fill(Some(GameColor {value: 0x000000}))
+                            .with_fill(Some(GameColor {value: 0x00_0000}))
                             .translate(Coord::new((WIDTH/2) as i32 - 200, (HEIGHT/2) as i32))
                             .into_iter());
         } else {
@@ -203,14 +190,14 @@ fn play_game<F: Framebuffer>(rng: &mut Rng, display: &mut LcdDisplay<F>, i2c_3: 
     let mut score_a: u32 = 0;
     display.draw(Font6x8::render_str(&format!("<--- Player B: {:04}  --->", score_b))
                             .with_stroke(Some(C_PLAYER_B))
-                            .with_fill(Some(GameColor {value: 0x000000}))
+                            .with_fill(Some(GameColor {value: 0x00_0000}))
                             .translate(Coord::new(y_offset as i32, 0))
                             .into_iter()
                             .map(|p| Pixel(UnsignedCoord::new((10 - p.0[1])as u32, p.0[0]), p.1)));
 
     display.draw(Font6x8::render_str(&format!("<--- Player A: {:04}  --->", score_a))
                             .with_stroke(Some(C_PLAYER_A))
-                            .with_fill(Some(GameColor {value: 0x000000}))
+                            .with_fill(Some(GameColor {value: 0x00_0000}))
                             .translate(Coord::new(y_offset as i32, 0))
                             .into_iter()
                             .map(|p| Pixel(UnsignedCoord::new((WIDTH as u32 - 10 + p.0[1])as u32, HEIGHT as u32 - p.0[0]), p.1)));
@@ -236,7 +223,6 @@ where F: Framebuffer {
     let angle_a = get_rand_num(rng) as f32 % 360_f32;
     let angle_b = get_rand_num(rng) as f32 % 360_f32;
 
-    //ID for Objects 0 = default and 1..255 for objects!!!
     let player_a = Player::new(
         AABBox::new(MID_MID, BOTTOM_RIGHT),
         AABBox::new(TOP_MID, RIGHT_MID),
@@ -244,7 +230,6 @@ where F: Framebuffer {
         pos_a,
         2,
         angle_a,
-        1,
     );
     let player_b = Player::new(
         AABBox::new(TOP_LEFT, MID_MID),
@@ -253,7 +238,6 @@ where F: Framebuffer {
         pos_b,
         2,
         angle_b,
-        2,
     );
     let mut buffs: Vec<Box<Buff>> = Vec::new();
     let mut players: Vec<Player> = Vec::new();
@@ -264,7 +248,6 @@ where F: Framebuffer {
     let mut last_time_update = system_clock::ticks();
     let mut next_buff = get_rand_num(rng) % 100;
     let mut last_buff = system_clock::ticks();
-    let mut playingfield = PlayingField::new();
     let mut player_collision = false;
     loop {
         let mut touches: Vec<Point> = Vec::new();
@@ -280,7 +263,7 @@ where F: Framebuffer {
         if ticks - last_time_update > 10 {
             display.draw(Font6x8::render_str(&format!("Time {:04}", ticks / 10))
                             .with_stroke(Some(C_PLAYER_A))
-                            .with_fill(Some(GameColor {value: 0x000000}))
+                            .with_fill(Some(GameColor {value: 0x00_0000}))
                             .into_iter());
             last_time_update = ticks;
         }
@@ -322,7 +305,7 @@ where F: Framebuffer {
                         clear_all |= buffs[i].clear_screen();
                         let aabb = buffs[i].aabb();
                         display.draw(Rect::new(aabb.0, aabb.1)
-                                        .with_fill(Some(GameColor{value: 0x000000}))
+                                        .with_fill(Some(GameColor{value: 0x00_0000}))
                                         .into_iter());
                         buffs.remove(i);
                     } else {
@@ -338,12 +321,9 @@ where F: Framebuffer {
                 display.draw(p.draw());
             }
             for p in &mut players {
-                p.draw(display, &mut playingfield);
+                p.draw(display);
             }
-        } else if playingfield.collision {
-            return get_rand_num(rng) % 2;
         }
-        
     }
 }
 

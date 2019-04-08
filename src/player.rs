@@ -3,7 +3,7 @@ use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{Circle, Line};
 use stm32f7_discovery::lcd::{Framebuffer, HEIGHT, WIDTH};
 use core::f32::consts::PI;
-use nalgebra::{Vector2, dot, normalize};
+use nalgebra::Vector2;
 use alloc::{
     vec::Vec,
     boxed::Box
@@ -14,7 +14,6 @@ use crate::geometry::{
 };
 use crate::display::{LcdDisplay, GameColor};
 use crate::buffs::{PlayerBuff, Buff};
-use crate::playingfield::PlayingField;
 
 
 pub const PAD_LEFT: f32 = 10_f32;
@@ -63,7 +62,6 @@ pub struct Player {
     input_right: InputRegion,
     pos: (f32, f32),
     color: GameColor,
-    id: u8,
     direction: Vector2D,
     radius: u32,
     speed: f32,
@@ -73,7 +71,7 @@ pub struct Player {
 
 impl Player {
     pub fn new(left_input_box: AABBox, right_input_box: AABBox, color: GameColor,
-               start_pos: (f32, f32), radius: u32, angle: f32, id: u8) -> Self {
+               start_pos: (f32, f32), radius: u32, angle: f32) -> Self {
         let a = angle * (PI) / 180.0;
 
         let mut s = Self {
@@ -81,7 +79,6 @@ impl Player {
             input_right: InputRegion::new(right_input_box),
             pos: start_pos,
             color,
-            id,
             direction: Vector2D{x: 1.0, y: 0.0}.rotate(a),
             speed: 1.0,
             radius,
@@ -105,8 +102,7 @@ impl Player {
         }
     }
 
-    pub fn draw<F: Framebuffer>(&self, display: &mut LcdDisplay<F>, 
-                                playing_field: &mut PlayingField) {
+    pub fn draw<F: Framebuffer>(&self, display: &mut LcdDisplay<F>) {
         let color = self.buffs
                         .iter()
                         .fold(self.color, |acc, func| (func.change_color)(acc));
@@ -114,21 +110,25 @@ impl Player {
                          .iter()
                          .fold(self.radius as f32, |acc, func| (func.change_radius)(acc));
 
-        let circle_iter = 
-        Circle::new(Coord::new(self.pos.0 as i32, self.pos.1 as i32), libm::roundf(radius) as u32)
-            .with_stroke(Some(color))
-            .with_fill(Some(color))
-            .into_iter();
-            
-        // display.draw(circle_iter);
-        playing_field.store(circle_iter, self.id);
-
-        let n = self.trace.len();
-        display.draw(Line::new(Coord::new(self.trace[n-2].0 as i32, self.trace[n-2].1 as i32),
-                            Coord::new(self.trace[n-1].0 as i32, self.trace[n-1].1 as i32))
-                            .with_stroke(Some(GameColor{value: 0xFF0000}))
-                            .with_fill(Some(GameColor{value: 0xFF0000}))
+        let circle_iter =  Circle::new(Coord::new(self.pos.0 as i32,
+                                                  self.pos.1 as i32),
+                                       libm::roundf(radius) as u32)
+                                .with_stroke(Some(color))
+                                .with_fill(Some(color))
+                                .into_iter();
+                                
+        if cfg!(debug_assertions) {
+            let n = self.trace.len();
+            display.draw(Line::new(Coord::new(self.trace[n-2].0 as i32,
+                                              self.trace[n-2].1 as i32),
+                                   Coord::new(self.trace[n-1].0 as i32,
+                                              self.trace[n-1].1 as i32))
+                            .with_stroke(Some(GameColor{value: 0xFF_0000}))
+                            .with_fill(Some(GameColor{value: 0xFF_0000}))
                             .into_iter() );
+        } else {
+            display.draw(circle_iter);
+        }
     }
 
     fn update_pos(&mut self, mut new_trace_segment: bool) {
@@ -251,7 +251,7 @@ impl Collide<Player> for Player {
                 p2_radius = if p2_radius > tj.2 { p2_radius } else { tj.2 };
                 let radius = if p1_radius > p2_radius { p1_radius } else { p2_radius };
                 if distance <= radius as f32 {
-                    println!("collision P1");
+                    if cfg!(debug_assertions) {println!("collision P1");}
                     return true;
 
                 }
@@ -264,21 +264,21 @@ impl Collide<Player> for Player {
                 let p2_p1 = p1_pos - p2_j ;
                 let distance = libm::fabsf(libm::sqrtf(p2_p1.dot(&normal)));
                 if distance <= p2_radius as f32 {
-                    println!("collision ? : {} {} ", distance, p2_radius);
+                    if cfg!(debug_assertions) {println!("collision ? : {} {} ", distance, p2_radius);}
                     
                     let p1_projected = libm::sqrtf(axis.dot(&p2_p1))*axis;
                     let p1_projected_distance = p1_projected.norm();
-                    println!("{} {} {} {} {}", axis_length, axis.norm(), p1_projected_distance, p2_p1.x, p2_p1.y);
+                    if cfg!(debug_assertions) {println!("{} {} {} {} {}", axis_length, axis.norm(), p1_projected_distance, p2_p1.x, p2_p1.y);}
 
                     // if p1_projected.dot(&axis) >= 0.0 && p1_projected.dot(&(-axis)) >= 0.0 {
                     if  p1_projected_distance >= -(p2_radius as f32) &&
                         p1_projected_distance <= axis_length + p2_radius as f32 {
-                        println!("collision P2");
+                        if cfg!(debug_assertions) {println!("collision P2");}
                         return true;
                     }
                 }
             }
         }
-        return false;
+        false
     }
 }

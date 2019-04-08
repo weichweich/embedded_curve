@@ -48,7 +48,7 @@ impl PlayingField{
 
             let old_id = self.id_field[coord.0 as usize][coord.1 as usize];
             let mut old_ids: Vec<u8> = Vec::new();
-            if !old_ids.contains(&old_id) && old_id != new_id && old_id != 0 {
+            if !old_ids.contains(&old_id) && old_id != id && old_id != 0 {
                 //self.ticks_field[coord.0 as usize][coord.1 as usize] + 10 < ticks as u8 {
                 
                 self.collision = true;
@@ -57,7 +57,7 @@ impl PlayingField{
                 // self.collisions.push( Collision{old_id, new_id} );
             } 
             
-            self.id_field[coord.0 as usize][coord.1 as usize] = new_id ;
+            self.id_field[coord.0 as usize][coord.1 as usize] = id ;
             // self.collision_ignore[coord.0 as usize][coord.1 as usize] = true;
             // self.ticks[coord.0 as usize][coord.1 as usize] = ticks_ as u8;
         }

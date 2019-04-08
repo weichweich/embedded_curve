@@ -18,6 +18,7 @@ pub trait Buff {
     fn apply_player(&self, player: &mut Player);
     fn clear_screen(&self) -> bool;
     fn draw(&self) -> ImgIterator;
+    fn aabb(&self) -> (Coord, Coord);
 }
 
 pub struct PlayerBuff {
@@ -82,7 +83,9 @@ impl ClearBuff {
 }
 
 impl Buff for ClearBuff {
-    fn apply_player(&self, _player: &mut Player) {}
+    fn apply_player(&self, _player: &mut Player) {
+        _player.clear_trace();
+    }
 
     fn clear_screen(&self) -> bool { true }
 
@@ -91,7 +94,8 @@ impl Buff for ClearBuff {
     }
 
     fn aabb(&self) -> (Coord, Coord){
-        (self.pos, self.pos)
+        let low_right = Coord::new(self.pos[0]+10, self.pos[1]+10);
+        (self.pos, low_right)
     }
 }
 

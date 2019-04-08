@@ -136,7 +136,8 @@ impl Player {
             self.trace.push( tracepoint );
             self.trace.push( tracepoint );
         } else {
-            self.trace[self.trace.len()-1] = tracepoint;
+            let n = self.trace.len();
+            self.trace[n-1] = tracepoint;
         }
     }
 
@@ -174,6 +175,13 @@ impl Player {
     pub fn add_buff(&mut self, buff: PlayerBuff) {
         self.buffs.push(buff);
     }
+
+    pub fn clear_trace(&mut self) {
+        let tracepoint : (f32, f32, u32) = (self.pos.0, self.pos.1, self.radius);
+        self.trace.clear();
+        self.trace.push( tracepoint );
+        self.trace.push( tracepoint );
+    }
 }
 
 impl CollideSelf for Player {
@@ -190,14 +198,14 @@ impl<T: Buff> Collide<T> for Player {
 
 impl Collide<Player> for Player {
     fn collides_with(&self, incoming: &Player) -> bool {
-        let trace_pos1 = self.trace.last().unwrap();
-        let trace_pos2 = incoming.trace.last().unwrap();
+        let trace1 = self.trace.last().unwrap();
+        let trace2 = incoming.trace.last().unwrap();
 
-        let p1_pos = (trace_pos1.0, trace_pos1.1);
-        let p2_pos = (trace_pos2.0, trace_pos2.1);
+        let p1_pos = (trace1.0, trace1.1);
+        let p2_pos = (trace2.0, trace2.1);
 
-        let r1 = trace_pos1.2;
-        let r2 = trace_pos2.2;
+        let p1_radius = trace1.2;
+        let p2_radius = trace2.2;
 
         false
     }

@@ -4,6 +4,7 @@
 #![feature(alloc)]
 #![feature(lang_items)]
 
+#[macro_use]
 extern crate alloc;
 extern crate alloc_cortex_m;
 extern crate cortex_m;
@@ -23,7 +24,10 @@ pub mod playingfield;
 use embedded_graphics::{
     prelude::*,
     Drawing,
-    primitives::Rect
+    drawable::Pixel,
+    unsignedcoord::{UnsignedCoord},
+    primitives::Rect,
+    fonts::Font6x8,
 };
 use alloc::{
     vec::Vec,
@@ -49,14 +53,42 @@ use stm32f7_discovery::{
 };
 
 use geometry::{AABBox, Point};
-use player::{Player, Collide, CollideSelf};
+use player::{Player, Collide, CollideSelf, PAD_LEFT, PAD_RIGHT};
 
-use buffs::{Buff, ChangeDirBuff, ClearBuff, FastPlayerBuffSprite, SlowBuff};
+use buffs::{
+    Buff, ChangeDirBuff, ClearBuff, FastPlayerBuffSprite, SlowBuff, ColorBuff,
+    BigBuff, SmallBuff};
 use display::{GameColor, LcdDisplay};
 use embedded_graphics::coord::Coord;
 use playingfield::PlayingField;
 
 const HEAP_SIZE: usize = 1024 * 1024; // in bytes
+
+const C_PLAYER_A: GameColor = GameColor{value: 0x0000FF};
+const C_PLAYER_B: GameColor = GameColor{value: 0x00FF00};
+
+const TOP_LEFT: Point = Point { x: 0, y: 0 };
+const TOP_MID: Point = Point { x: WIDTH / 2, y: 0 };
+const MID_MID: Point = Point {
+    x: WIDTH / 2,
+    y: HEIGHT / 2,
+};
+const BOTTOM_MID: Point = Point {
+    x: WIDTH / 2,
+    y: HEIGHT,
+};
+const BOTTOM_RIGHT: Point = Point {
+    x: WIDTH,
+    y: HEIGHT,
+};
+const LEFT_MID: Point = Point {
+    x: 0,
+    y: HEIGHT / 2,
+};
+const RIGHT_MID: Point = Point {
+    x: WIDTH,
+    y: HEIGHT / 2,
+};
 
 #[entry]
 fn main() -> ! {
@@ -132,44 +164,45 @@ fn main() -> ! {
 
     let mut display = LcdDisplay::new(&mut layer_1);
 
+    let y_offset: u32 = 65;
 
+    let mut score_a = 0;
+    let mut score_b = 0;
     loop {
-        // poll for new touch data
-        game_loop(&mut rng, &mut display, &mut i2c_3);
+        display.draw(Font6x8::render_str(&format!("<--- Player B: {:04}  --->", score_b))
+                                .with_stroke(Some(C_PLAYER_B))
+                                .with_fill(Some(GameColor {value: 0x000000}))
+                                .translate(Coord::new(y_offset as i32, 0))
+                                .into_iter()
+                                .map(|p| Pixel(UnsignedCoord::new((10 - p.0[1])as u32, p.0[0]), p.1)));
+
+        display.draw(Font6x8::render_str(&format!("<--- Player A: {:04}  --->", score_a))
+                                .with_stroke(Some(C_PLAYER_A))
+                                .with_fill(Some(GameColor {value: 0x000000}))
+                                .translate(Coord::new(y_offset as i32, 0))
+                                .into_iter()
+                                .map(|p| Pixel(UnsignedCoord::new((WIDTH as u32 - 10 + p.0[1])as u32, HEIGHT as u32 - p.0[0]), p.1)));
+        // Start game loop
+        match game_loop(&mut rng, &mut display, &mut i2c_3) {
+            0 => score_a += 1,
+            1 => score_b += 1,
+            _ => {},
+        }
+
+        // round finished, clear screen
+        display.clear();
     }
 }
 
-fn game_loop<F>(rng: &mut Rng, display: &mut LcdDisplay<F>, i2c_3: &mut I2C<I2C3>)
+fn game_loop<F>(rng: &mut Rng, display: &mut LcdDisplay<F>, i2c_3: &mut I2C<I2C3>) -> u32
 where F: Framebuffer {
-    let top_left = Point { x: 0, y: 0 };
-    let top_mid = Point { x: WIDTH / 2, y: 0 };
-    let mid_mid = Point {
-        x: WIDTH / 2,
-        y: HEIGHT / 2,
-    };
-    let bottom_mid = Point {
-        x: WIDTH / 2,
-        y: HEIGHT,
-    };
-    let bottom_right = Point {
-        x: WIDTH,
-        y: HEIGHT,
-    };
-    let left_mid = Point {
-        x: 0,
-        y: HEIGHT / 2,
-    };
-    let right_mid = Point {
-        x: WIDTH,
-        y: HEIGHT / 2,
-    };
 
     let pos_a = (
-        get_rand_num(rng) as f32 % WIDTH as f32,
+        PAD_LEFT + get_rand_num(rng) as f32 % (WIDTH as f32 - PAD_LEFT - PAD_RIGHT),
         get_rand_num(rng) as f32 % HEIGHT as f32,
     );
     let pos_b = (
-        get_rand_num(rng) as f32 % WIDTH as f32,
+        PAD_LEFT + get_rand_num(rng) as f32 % (WIDTH as f32 - PAD_LEFT - PAD_RIGHT),
         get_rand_num(rng) as f32 % HEIGHT as f32,
     );
     let angle_a = get_rand_num(rng) as f32 % 360_f32;
@@ -177,18 +210,18 @@ where F: Framebuffer {
 
     //ID for Objects 0 = default and 1..255 for objects!!!
     let player_a = Player::new(
-        AABBox::new(left_mid, bottom_mid),
-        AABBox::new(top_left, mid_mid),
-        GameColor { value: 0x0000FF },
+        AABBox::new(TOP_LEFT, MID_MID),
+        AABBox::new(LEFT_MID, BOTTOM_MID),
+        C_PLAYER_A,
         pos_a,
         2,
         angle_a,
         1,
     );
     let player_b = Player::new(
-        AABBox::new(top_mid, right_mid),
-        AABBox::new(mid_mid, bottom_right),
-        GameColor { value: 0x00FF00 },
+        AABBox::new(MID_MID, BOTTOM_RIGHT),
+        AABBox::new(TOP_MID, RIGHT_MID),
+        C_PLAYER_B,
         pos_b,
         2,
         angle_b,
@@ -271,22 +304,26 @@ where F: Framebuffer {
                 p.draw(display, &mut playingfield);
             }
         } else if playingfield.collision {
-            return;
+            return get_rand_num(rng) % 2;
         }
     }
 }
 
 fn new_rand_buff(rng: &mut Rng) -> Box<Buff + 'static> {
     let pos_buff = (
-        (get_rand_num(rng) as f32 % WIDTH as f32) as i32,
+        (PAD_LEFT + get_rand_num(rng) as f32 
+            % (WIDTH as f32 - PAD_LEFT - PAD_RIGHT)) as i32,
         (get_rand_num(rng) as f32 % HEIGHT as f32) as i32,
     );
     let rand = get_rand_num(rng);
-    match rand % 4 {
+    match (rand % 7) +3 {
         0 => Box::new(FastPlayerBuffSprite::new(Coord::new(pos_buff.0, pos_buff.1))),
         1 => Box::new(ClearBuff::new(Coord::new(pos_buff.0, pos_buff.1))),
         2 => Box::new(ChangeDirBuff::new(Coord::new(pos_buff.0, pos_buff.1))),
         3 => Box::new(SlowBuff::new(Coord::new(pos_buff.0, pos_buff.1))),
+        4 => Box::new(ColorBuff::new(Coord::new(pos_buff.0, pos_buff.1))),
+        5 => Box::new(BigBuff::new(Coord::new(pos_buff.0, pos_buff.1))),
+        6 => Box::new(SmallBuff::new(Coord::new(pos_buff.0, pos_buff.1))),
         _ => Box::new(SlowBuff::new(Coord::new(pos_buff.0, pos_buff.1))),
     }
 }

@@ -13,8 +13,11 @@ use crate::geometry::{
 };
 use crate::display::{LcdDisplay, GameColor};
 use crate::buffs::{PlayerBuff, Buff};
-
 use crate::playingfield::PlayingField;
+
+
+pub const PAD_LEFT: f32 = 10_f32;
+pub const PAD_RIGHT: f32 = 10_f32;
 
 
 pub trait Collide<T> {
@@ -106,9 +109,12 @@ impl Player {
         let color = self.buffs
                         .iter()
                         .fold(self.color, |acc, func| (func.change_color)(acc));
+        let radius = self.buffs
+                         .iter()
+                         .fold(self.radius as f32, |acc, func| (func.change_radius)(acc));
 
         let circle_iter = 
-        Circle::new(Coord::new(self.pos.0 as i32, self.pos.1 as i32), self.radius)
+        Circle::new(Coord::new(self.pos.0 as i32, self.pos.1 as i32), libm::roundf(radius) as u32)
             .with_stroke(Some(color))
             .with_fill(Some(color))
             .into_iter();
@@ -123,10 +129,10 @@ impl Player {
                         .fold(self.speed, |acc, func| (func.change_speed)(acc));
         let mut new_x = (self.pos.0 + self.direction.x * speed) % WIDTH as f32;
         let mut new_y = (self.pos.1 + self.direction.y * speed) % HEIGHT as f32;
-        if new_x < 0.0 {
-            new_x = WIDTH as f32 - 1.0;
-        } else if new_x > WIDTH as f32 {
-            new_x = 0.5;
+        if new_x < PAD_LEFT {
+            new_x = WIDTH as f32 - PAD_RIGHT;
+        } else if new_x > (WIDTH as f32 - PAD_RIGHT) {
+            new_x = PAD_LEFT + 1_f32;
         }
         if new_y < 0.0 {
             new_y = HEIGHT as f32 - 1.0;

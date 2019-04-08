@@ -27,7 +27,9 @@ use embedded_graphics::{
     drawable::Pixel,
     unsignedcoord::{UnsignedCoord},
     primitives::Rect,
-    fonts::Font6x8,
+    fonts::{
+        Font6x8, Font12x16
+    },
 };
 use alloc::{
     vec::Vec,
@@ -174,33 +176,49 @@ fn main() -> ! {
 
     let mut display = LcdDisplay::new(&mut layer_1);
 
-    let y_offset: u32 = 65;
+    let cooldown: i32 = 5 * 100;
 
-    let mut score_a = 0;
-    let mut score_b = 0;
+    let mut cool_ticks = system_clock::ticks();
     loop {
-        display.draw(Font6x8::render_str(&format!("<--- Player B: {:04}  --->", score_b))
-                                .with_stroke(Some(C_PLAYER_B))
-                                .with_fill(Some(GameColor {value: 0x000000}))
-                                .translate(Coord::new(y_offset as i32, 0))
-                                .into_iter()
-                                .map(|p| Pixel(UnsignedCoord::new((10 - p.0[1])as u32, p.0[0]), p.1)));
+        let ticks = system_clock::ticks();
+        let d_ticks = ticks - cool_ticks;
 
-        display.draw(Font6x8::render_str(&format!("<--- Player A: {:04}  --->", score_a))
-                                .with_stroke(Some(C_PLAYER_A))
-                                .with_fill(Some(GameColor {value: 0x000000}))
-                                .translate(Coord::new(y_offset as i32, 0))
-                                .into_iter()
-                                .map(|p| Pixel(UnsignedCoord::new((WIDTH as u32 - 10 + p.0[1])as u32, HEIGHT as u32 - p.0[0]), p.1)));
-        // Start game loop
-        match game_loop(&mut rng, &mut display, &mut i2c_3) {
-            0 => score_a += 1,
-            1 => score_b += 1,
-            _ => {},
+        if (d_ticks as i32) < cooldown {
+            display.draw(Font12x16::render_str(&format!("BE READY! FUN STARS IN {} SECONDS!", (cooldown - d_ticks as i32) / 100))
+                            .with_stroke(Some(C_PLAYER_A))
+                            .with_fill(Some(GameColor {value: 0x000000}))
+                            .translate(Coord::new((WIDTH/2) as i32 - 200, (HEIGHT/2) as i32))
+                            .into_iter());
+        } else {
+            display.clear();
+            play_game(&mut rng, &mut display, &mut i2c_3);
+            cool_ticks = system_clock::ticks();
         }
+    }
+}
 
-        // round finished, clear screen
-        display.clear();
+fn play_game<F: Framebuffer>(rng: &mut Rng, display: &mut LcdDisplay<F>, i2c_3: &mut I2C<I2C3>) {
+    let y_offset: u32 = 65;
+    let mut score_b: u32 = 0;
+    let mut score_a: u32 = 0;
+    display.draw(Font6x8::render_str(&format!("<--- Player B: {:04}  --->", score_b))
+                            .with_stroke(Some(C_PLAYER_B))
+                            .with_fill(Some(GameColor {value: 0x000000}))
+                            .translate(Coord::new(y_offset as i32, 0))
+                            .into_iter()
+                            .map(|p| Pixel(UnsignedCoord::new((10 - p.0[1])as u32, p.0[0]), p.1)));
+
+    display.draw(Font6x8::render_str(&format!("<--- Player A: {:04}  --->", score_a))
+                            .with_stroke(Some(C_PLAYER_A))
+                            .with_fill(Some(GameColor {value: 0x000000}))
+                            .translate(Coord::new(y_offset as i32, 0))
+                            .into_iter()
+                            .map(|p| Pixel(UnsignedCoord::new((WIDTH as u32 - 10 + p.0[1])as u32, HEIGHT as u32 - p.0[0]), p.1)));
+    // Start game loop
+    match game_loop(rng, display, i2c_3) {
+        0 => score_a += 1,
+        1 => score_b += 1,
+        _ => {},
     }
 }
 
@@ -220,8 +238,8 @@ where F: Framebuffer {
 
     //ID for Objects 0 = default and 1..255 for objects!!!
     let player_a = Player::new(
-        AABBox::new(TOP_LEFT, MID_MID),
-        AABBox::new(LEFT_MID, BOTTOM_MID),
+        AABBox::new(MID_MID, BOTTOM_RIGHT),
+        AABBox::new(TOP_MID, RIGHT_MID),
         C_PLAYER_A,
         pos_a,
         2,
@@ -229,8 +247,8 @@ where F: Framebuffer {
         1,
     );
     let player_b = Player::new(
-        AABBox::new(MID_MID, BOTTOM_RIGHT),
-        AABBox::new(TOP_MID, RIGHT_MID),
+        AABBox::new(TOP_LEFT, MID_MID),
+        AABBox::new(LEFT_MID, BOTTOM_MID),
         C_PLAYER_B,
         pos_b,
         2,
@@ -243,6 +261,7 @@ where F: Framebuffer {
     players.push(player_b);
 
     let mut last_curve_update = system_clock::ticks();
+    let mut last_time_update = system_clock::ticks();
     let mut next_buff = get_rand_num(rng) % 100;
     let mut last_buff = system_clock::ticks();
     let mut playingfield = PlayingField::new();
@@ -257,6 +276,14 @@ where F: Framebuffer {
         }
 
         let ticks = system_clock::ticks();
+
+        if ticks - last_time_update > 10 {
+            display.draw(Font6x8::render_str(&format!("Time {:04}", ticks / 10))
+                            .with_stroke(Some(C_PLAYER_A))
+                            .with_fill(Some(GameColor {value: 0x000000}))
+                            .into_iter());
+            last_time_update = ticks;
+        }
         if ticks - last_buff >= next_buff as usize {
             next_buff = get_rand_num(rng) % (100 * 30);
             last_buff = system_clock::ticks();

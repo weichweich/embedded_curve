@@ -52,7 +52,7 @@ impl PlayingField{
                 //self.ticks_field[coord.0 as usize][coord.1 as usize] + 10 < ticks as u8 {
                 
                 self.collision = true;
-                println!("collision");
+                // println!("collision PF");
                 // old_ids.push(old_id);
                 // self.collisions.push( Collision{old_id, new_id} );
             } 

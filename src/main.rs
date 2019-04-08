@@ -38,6 +38,8 @@ use stm32f7_discovery::{
     system_clock::{self, Hz},
     touch,
 };
+use nalgebra::{Vector2, dot, normalize};
+
 
 use geometry::{AABBox, Point};
 use player::{Player, Collide, CollideSelf};
@@ -107,7 +109,14 @@ fn main() -> ! {
         println!("Start Game");
     }
 
-    println!("{}", HEAP_SIZE);
+    // let v1 = Vector2::new(3.0,1.0);
+    // let v2 = Vector2::new(4.0,2.0);
+    // let v3 = Vector2::new(3.0,4.0);
+
+    // let v13 = v3 - v1;
+    // let v12
+
+    // println!("{}", HEAP_SIZE);
 
     let mut i2c_3 = init::init_i2c_3(peripherals.I2C3, &mut rcc);
     i2c_3.test_1();
@@ -208,7 +217,7 @@ fn main() -> ! {
 
     let mut last_curve_update = system_clock::ticks();
     let mut playingfield = PlayingField::new();
-
+    let mut player_collision = false;
     loop {
         // poll for new touch data
         let mut touches: Vec<Point> = Vec::new();
@@ -220,7 +229,9 @@ fn main() -> ! {
         }
         // println!("hoolahoop");
         let ticks = system_clock::ticks();
-        if !playingfield.collision && ticks - last_curve_update >= 3 {
+        
+        // !playingfield.collision &&
+        if !player_collision && ticks - last_curve_update >= 3 {
             for p in &mut players {
                 p.act(&touches);
                 p.draw(&mut display, &mut playingfield);
@@ -231,21 +242,24 @@ fn main() -> ! {
             }
 
             last_curve_update = ticks;
-        }
-        for i in 1..players.len() {
-            let (pis, pjs) = players.split_at(i);
-            let pi = pis.last().unwrap();
+            for i in 1..players.len() {
+                let (pis, pjs) = players.split_at(i);
+                let pi = pis.last().unwrap();
 
-            if pi.collides() {
-                // TODO handle collision with self
-            } else  { 
-                for pj in pjs {
-                    if pi.collides_with(pj) {
-                        // TODO: Handle player collision
+                if pi.collides() {
+                    // TODO handle collision with self
+                } else  { 
+                    for pj in pjs {
+                        if pi.collides_with(pj) {
+                            // TODO: Handle player collision
+                            player_collision = true;
+
+                        }
                     }
                 }
             }
         }
+        
     }
 }
 

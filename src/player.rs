@@ -1,8 +1,10 @@
 use embedded_graphics::prelude::*;
-use embedded_graphics::primitives::{Circle};
+use embedded_graphics::primitives::{Circle, Line};
 use stm32f7_discovery::lcd::{Framebuffer, HEIGHT, WIDTH};
 use core::f32::consts::PI;
 use alloc::vec::Vec;
+use nalgebra::{Vector2, dot, normalize};
+use libm;
 
 use crate::geometry::{
     AABBox, Point, Vector2D
@@ -109,29 +111,44 @@ impl Player {
             .with_fill(Some(color))
             .into_iter();
             
-        display.draw(circle_iter);
+        // display.draw(circle_iter);
         playing_field.store(circle_iter, self.id);
+
+        let n = self.trace.len();
+        display.draw(Line::new(Coord::new(self.trace[n-2].0 as i32, self.trace[n-2].1 as i32),
+                            Coord::new(self.trace[n-1].0 as i32, self.trace[n-1].1 as i32))
+                            .with_stroke(Some(GameColor{value: 0xFF0000}))
+                            .with_fill(Some(GameColor{value: 0xFF0000}))
+                            .into_iter() );
     }
 
-    fn update_pos(&mut self, new_trace_segment: bool) {
+    fn update_pos(&mut self, mut new_trace_segment: bool) {
         let speed = self.buffs
                         .iter()
                         .fold(self.speed, |acc, func| (func.change_speed)(acc));
-        let mut new_x = (self.pos.0 + self.direction.x * speed) % WIDTH as f32;
-        let mut new_y = (self.pos.1 + self.direction.y * speed) % HEIGHT as f32;
+        let mut new_x = (self.pos.0 + self.direction.x * speed) as f32;
+        let mut new_y = (self.pos.1 + self.direction.y * speed) as f32;
+        
         if new_x < 0.0 {
             new_x = WIDTH as f32 - 1.0;
+            new_trace_segment = true;
         } else if new_x > WIDTH as f32 {
             new_x = 0.5;
+            new_trace_segment = true;
         }
         if new_y < 0.0 {
             new_y = HEIGHT as f32 - 1.0;
+            new_trace_segment = true;
         } else if new_y > HEIGHT as f32 {
+            new_trace_segment = true;
             new_y = 0.5;
         }
         self.pos = (new_x, new_y);
-        
-        let tracepoint : (f32, f32, u32) = (self.pos.0, self.pos.1, self.radius);
+        self.update_trace(new_trace_segment);
+    }
+
+    fn update_trace(&mut self, new_trace_segment: bool) {
+        let tracepoint = (self.pos.0, self.pos.1, self.radius);
         if new_trace_segment {
             self.trace.push( tracepoint );
             self.trace.push( tracepoint );
@@ -186,6 +203,7 @@ impl Player {
 
 impl CollideSelf for Player {
     fn collides(&self) -> bool {
+        // collides_with(&self)
         false
     }
 }
@@ -199,14 +217,55 @@ impl<T: Buff> Collide<T> for Player {
 impl Collide<Player> for Player {
     fn collides_with(&self, incoming: &Player) -> bool {
         let trace1 = self.trace.last().unwrap();
-        let trace2 = incoming.trace.last().unwrap();
+        // let trace2 = incoming.trace.last().unwrap();
 
-        let p1_pos = (trace1.0, trace1.1);
-        let p2_pos = (trace2.0, trace2.1);
+        let p1_pos = Vector2::new(trace1.0, trace1.1);
+        // let p2_pos = (trace2.0, trace2.1);
 
         let p1_radius = trace1.2;
-        let p2_radius = trace2.2;
+        // let p2_radius = trace2.2;
+        let n = incoming.trace.len();
+        for (ti, tj) in incoming.trace[1..].iter().zip(incoming.trace[..n-1].iter()) {
+            let mut p2_radius = ti.2;
+            let p2_i = Vector2::new(ti.0, ti.1);
+            let p2_j = Vector2::new(tj.0, tj.1);
 
-        false
+
+            if p2_i == p2_j {
+                
+                let p2_p1 = p1_pos - p2_j;
+                let distance = p2_p1.dot(&p2_p1); //dir.dot(&dir);
+                p2_radius = if p2_radius > tj.2 { p2_radius } else { tj.2 };
+                let radius = if p1_radius > p2_radius { p1_radius } else { p2_radius };
+                if distance <= radius as f32 {
+                    println!("collision P1");
+                    return true;
+
+                }
+            }  else {               //Segment has a length > 0
+                let mut axis = p2_j - p2_i;
+                let axis_length = axis.norm();
+                axis = axis.normalize();
+
+                let normal = Vector2::new(-axis.y, axis.x).normalize();
+                let p2_p1 = p1_pos - p2_j ;
+                let distance = libm::fabsf(libm::sqrtf(p2_p1.dot(&normal)));
+                if distance <= p2_radius as f32 {
+                    println!("collision ? : {} {} ", distance, p2_radius);
+                    
+                    let p1_projected = libm::sqrtf(axis.dot(&p2_p1))*axis;
+                    let p1_projected_distance = p1_projected.norm();
+                    println!("{} {} {} {} {}", axis_length, axis.norm(), p1_projected_distance, p2_p1.x, p2_p1.y);
+
+                    // if p1_projected.dot(&axis) >= 0.0 && p1_projected.dot(&(-axis)) >= 0.0 {
+                    if  p1_projected_distance >= -(p2_radius as f32) &&
+                        p1_projected_distance <= axis_length + p2_radius as f32 {
+                        println!("collision P2");
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 }

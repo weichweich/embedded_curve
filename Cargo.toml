@@ -12,6 +12,7 @@ alloc-cortex-m = "0.3.4"
 libm = "0.1.2"
 bresenham = "*"
 embedded-graphics = "0.4.7"
+nalgebra = { version = "0.18", default-features = false }
 
 [patch.crates-io.cortex-m-rt]
 git = "https://github.com/rust-embedded/cortex-m-rt.git"

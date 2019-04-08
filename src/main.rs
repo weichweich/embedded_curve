@@ -163,7 +163,7 @@ fn main() -> ! {
 
     let mut display = LcdDisplay::new(&mut layer_1);
 
-    let cooldown: i32 = 5 * 100;
+    let cooldown: i32 = 3 * 100;
 
     let mut cool_ticks = system_clock::ticks();
     loop {
@@ -280,7 +280,7 @@ where F: Framebuffer {
             last_curve_update = ticks;
 
             // player player collision
-            for i in 1..players.len() {
+            for i in 1..=players.len() {
                 let (pis, pjs) = players.split_at(i);
                 let pi = pis.last().unwrap();
 
@@ -291,7 +291,10 @@ where F: Framebuffer {
                     for pj in pjs {
                         if pi.collides_with(pj) {
                             player_collision = true;
-                            if cfg!(debug_assertions) {println!("collision");}
+                            if cfg!(debug_assertions) {println!("collision A");}
+                        } else if pj.collides_with(pi) {
+                            player_collision = true;
+                            if cfg!(debug_assertions) {println!("collision B");}
                         }
                     }
                 }

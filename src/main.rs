@@ -20,7 +20,11 @@ pub mod geometry;
 pub mod player;
 pub mod playingfield;
 
-use embedded_graphics::Drawing;
+use embedded_graphics::{
+    prelude::*,
+    Drawing,
+    primitives::Rect
+};
 use alloc::{
     vec::Vec,
     boxed::Box
@@ -29,14 +33,19 @@ use alloc_cortex_m::CortexMHeap;
 use core::alloc::Layout as AllocLayout;
 use core::panic::PanicInfo;
 use rt::{entry, exception};
-use stm32f7::stm32f7x6::{CorePeripherals, Peripherals};
+use stm32f7::stm32f7x6::{
+    CorePeripherals,
+    Peripherals,
+    I2C3,
+};
 use stm32f7_discovery::{
     gpio::{GpioPort, OutputPin},
     init,
-    lcd::{self, Color, HEIGHT, WIDTH},
+    lcd::{self, Color, HEIGHT, WIDTH, Framebuffer},
     random::Rng,
     system_clock::{self, Hz},
     touch,
+    i2c::I2C,
 };
 
 use geometry::{AABBox, Point};
@@ -94,7 +103,7 @@ fn main() -> ! {
     // Initialize the allocator BEFORE you use it
     unsafe { ALLOCATOR.init(rt::heap_start() as usize, HEAP_SIZE) }
 
-    lcd.set_background_color(Color::from_hex(0x001000));
+    lcd.set_background_color(Color::from_hex(0x000000));
     let mut layer_1 = lcd.layer_1().unwrap();
     let mut layer_2 = lcd.layer_2().unwrap();
 
@@ -105,9 +114,9 @@ fn main() -> ! {
     lcd::init_stdout(layer_2);
     if cfg!(debug_assertions) {
         println!("Start Game");
+        println!("Heap size: {}", HEAP_SIZE);
     }
 
-    println!("{}", HEAP_SIZE);
 
     let mut i2c_3 = init::init_i2c_3(peripherals.I2C3, &mut rcc);
     i2c_3.test_1();
@@ -123,6 +132,15 @@ fn main() -> ! {
 
     let mut display = LcdDisplay::new(&mut layer_1);
 
+
+    loop {
+        // poll for new touch data
+        game_loop(&mut rng, &mut display, &mut i2c_3);
+    }
+}
+
+fn game_loop<F>(rng: &mut Rng, display: &mut LcdDisplay<F>, i2c_3: &mut I2C<I2C3>)
+where F: Framebuffer {
     let top_left = Point { x: 0, y: 0 };
     let top_mid = Point { x: WIDTH / 2, y: 0 };
     let mid_mid = Point {
@@ -147,15 +165,15 @@ fn main() -> ! {
     };
 
     let pos_a = (
-        get_rand_num(&mut rng) as f32 % WIDTH as f32,
-        get_rand_num(&mut rng) as f32 % HEIGHT as f32,
+        get_rand_num(rng) as f32 % WIDTH as f32,
+        get_rand_num(rng) as f32 % HEIGHT as f32,
     );
     let pos_b = (
-        get_rand_num(&mut rng) as f32 % WIDTH as f32,
-        get_rand_num(&mut rng) as f32 % HEIGHT as f32,
+        get_rand_num(rng) as f32 % WIDTH as f32,
+        get_rand_num(rng) as f32 % HEIGHT as f32,
     );
-    let angle_a = get_rand_num(&mut rng) as f32 % 360_f32;
-    let angle_b = get_rand_num(&mut rng) as f32 % 360_f32;
+    let angle_a = get_rand_num(rng) as f32 % 360_f32;
+    let angle_b = get_rand_num(rng) as f32 % 360_f32;
 
     //ID for Objects 0 = default and 1..255 for objects!!!
     let player_a = Player::new(
@@ -176,76 +194,100 @@ fn main() -> ! {
         angle_b,
         2,
     );
+    let mut buffs: Vec<Box<Buff>> = Vec::new();
     let mut players: Vec<Player> = Vec::new();
     players.push(player_a);
     players.push(player_b);
 
-    let mut buffs: Vec<Box<Buff>> = Vec::new();
-    let pos_buff = (
-        get_rand_num(&mut rng) as f32 % WIDTH as f32,
-        get_rand_num(&mut rng) as f32 % HEIGHT as f32,
-    );
-    buffs.push(Box::new(
-        FastPlayerBuffSprite::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32))));
-    let pos_buff = (
-        get_rand_num(&mut rng) as f32 % WIDTH as f32,
-        get_rand_num(&mut rng) as f32 % HEIGHT as f32,
-    );
-    buffs.push(Box::new(
-        ClearBuff::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32))));
-    let pos_buff = (
-        get_rand_num(&mut rng) as f32 % WIDTH as f32,
-        get_rand_num(&mut rng) as f32 % HEIGHT as f32,
-    );
-    buffs.push(Box::new(
-        ChangeDirBuff::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32))));
-    let pos_buff = (
-        get_rand_num(&mut rng) as f32 % WIDTH as f32,
-        get_rand_num(&mut rng) as f32 % HEIGHT as f32,
-    );
-    buffs.push(Box::new(
-        SlowBuff::new(Coord::new(pos_buff.0 as i32, pos_buff.1 as i32))));
-
     let mut last_curve_update = system_clock::ticks();
+    let mut next_buff = get_rand_num(rng) % 100;
+    let mut last_buff = system_clock::ticks();
     let mut playingfield = PlayingField::new();
 
     loop {
-        // poll for new touch data
         let mut touches: Vec<Point> = Vec::new();
-        for touch in &touch::touches(&mut i2c_3).unwrap() {
+        for touch in &touch::touches(i2c_3).unwrap() {
             touches.push(Point {
                 x: touch.x as usize,
                 y: touch.y as usize,
             });
         }
-        // println!("hoolahoop");
+
         let ticks = system_clock::ticks();
+        if ticks - last_buff >= next_buff as usize {
+            next_buff = get_rand_num(rng) % (100 * 30);
+            last_buff = system_clock::ticks();
+            buffs.push(new_rand_buff(rng));
+        }
         if !playingfield.collision && ticks - last_curve_update >= 3 {
             for p in &mut players {
                 p.act(&touches);
-                p.draw(&mut display, &mut playingfield);
-            }
-
-            for p in &mut buffs {
-                display.draw(p.draw());
             }
 
             last_curve_update = ticks;
-        }
-        for i in 1..players.len() {
-            let (pis, pjs) = players.split_at(i);
-            let pi = pis.last().unwrap();
 
-            if pi.collides() {
-                // TODO handle collision with self
-            } else  { 
-                for pj in pjs {
-                    if pi.collides_with(pj) {
-                        // TODO: Handle player collision
+            // player player collision
+            for i in 1..players.len() {
+                let (pis, pjs) = players.split_at(i);
+                let pi = pis.last().unwrap();
+
+                if pi.collides() {
+                    // TODO handle collision with self
+                } else  { 
+                    for pj in pjs {
+                        if pi.collides_with(pj) {
+                            // TODO: Handle player collision
+                        }
                     }
                 }
             }
+
+            // player buff collision
+            let mut clear_all = false;
+            for p in &mut players {
+                let mut i: usize = 0;
+                while i < buffs.len() {
+                    if p.collides_with(&buffs[i]) {
+                        buffs[i].apply_player(p);
+                        clear_all |= buffs[i].clear_screen();
+                        let aabb = buffs[i].aabb();
+                        display.draw(Rect::new(aabb.0, aabb.1)
+                                        .with_fill(Some(GameColor{value: 0x000000}))
+                                        .into_iter());
+                        buffs.remove(i);
+                    } else {
+                        i += 1;
+                    }
+                }
+            }
+            if clear_all {
+                display.clear();
+                // TODO: clear players
+            }
+            for p in &mut buffs {
+                display.draw(p.draw());
+            }
+            for p in &mut players {
+                p.draw(display, &mut playingfield);
+            }
+        } else if playingfield.collision {
+            return;
         }
+    }
+}
+
+fn new_rand_buff(rng: &mut Rng) -> Box<Buff + 'static> {
+    let pos_buff = (
+        (get_rand_num(rng) as f32 % WIDTH as f32) as i32,
+        (get_rand_num(rng) as f32 % HEIGHT as f32) as i32,
+    );
+    let rand = get_rand_num(rng);
+    match rand % 4 {
+        0 => Box::new(FastPlayerBuffSprite::new(Coord::new(pos_buff.0, pos_buff.1))),
+        1 => Box::new(ClearBuff::new(Coord::new(pos_buff.0, pos_buff.1))),
+        2 => Box::new(ChangeDirBuff::new(Coord::new(pos_buff.0, pos_buff.1))),
+        3 => Box::new(SlowBuff::new(Coord::new(pos_buff.0, pos_buff.1))),
+        _ => Box::new(SlowBuff::new(Coord::new(pos_buff.0, pos_buff.1))),
     }
 }
 

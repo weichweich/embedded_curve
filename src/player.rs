@@ -1,8 +1,12 @@
+use libm;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{Circle};
 use stm32f7_discovery::lcd::{Framebuffer, HEIGHT, WIDTH};
 use core::f32::consts::PI;
-use alloc::vec::Vec;
+use alloc::{
+    vec::Vec,
+    boxed::Box
+};
 
 use crate::geometry::{
     AABBox, Point, Vector2D
@@ -190,9 +194,14 @@ impl CollideSelf for Player {
     }
 }
 
-impl<T: Buff> Collide<T> for Player {
-    fn collides_with(&self, incoming: &T) -> bool {
-        false
+impl Collide<Box<Buff>> for Player {
+    fn collides_with(&self, incoming: &Box<Buff>) -> bool {
+        let b_pos = (*incoming).get_pos();
+        let dist_x = libm::fabsf(self.pos.0 - b_pos[0] as f32);
+        let dist_y = libm::fabsf(self.pos.1 - b_pos[1] as f32);
+        let dist = libm::sqrtf(dist_x*dist_x + dist_y*dist_y);
+
+        ((self.radius + 10) as f32) >= dist
     }
 }
 

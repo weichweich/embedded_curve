@@ -218,21 +218,25 @@ impl Player {
         for seg in trace {
             let e1 = seg.start - seg.end;
             let e2 = self.pos - seg.start;
-
             let val_dp = e1.dot(e2);
-
-            let e1_len = e1.length();
-            let e2_len = e2.length();
-
-            let cos = val_dp / (e1_len * e2_len);
-            let proj_len = cos * e2_len;
-
+            let len2 = e1.dot(e1);
             let proj_p = Vector2D {
-                x: seg.start.x + (proj_len * e1.x) / e1_len,
-                y: seg.start.y + (proj_len * e1.y) / e1_len,
+                x: seg.start.x + (val_dp * e1.x) / len2,
+                y: seg.start.y + (val_dp * e1.y) / len2,
             };
-            if proj_p.distance(self.pos) < (self.radius + seg.radius) as f32 {
-                if cfg!(debug_assertions) {println!("collision2");}
+
+            if val_dp < 0_f32 || val_dp > len2 {
+                // projection not on line segment
+                let dist_start = self.pos.distance(seg.start);
+                let dist_end = self.pos.distance(seg.end);
+                let min_dist = dist_end.min(dist_start);
+                if min_dist < (self.radius + seg.radius) as f32 {
+                    if cfg!(debug_assertions) {println!("collision1");}
+                    return true;
+                }
+            } else if proj_p.distance(self.pos) < (self.radius + seg.radius) as f32 {
+                if cfg!(debug_assertions) {
+                    println!("collision2 {} {:?} {:?}", proj_p.distance(self.pos), proj_p, seg);}
                 return true;
             }
         }

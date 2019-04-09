@@ -164,7 +164,7 @@ impl Game {
         }
     }
 
-    pub fn step<D>(&mut self, rng: &mut Rng, display: &mut D, touches: &Vec<Coord>, dt: usize) -> GameState
+    pub fn step<D>(&mut self, rng: &mut Rng, display: &mut D, touches: &[Coord], dt: usize) -> GameState
     where D: Drawing<GameColor> {
         match self.state {
             GameState::Playing => {},
@@ -179,12 +179,9 @@ impl Game {
 
             self.act(touches, dt);
             self.player_buff_collision(display);
-            match self.player_player_collision() {
-                Some(i) => {
-                    self.player_lost(i);
-                    self.state = GameState::Finished;
-                },
-                None => {}
+            if let Some(i) = self.player_player_collision() {
+                self.player_lost(i);
+                self.state = GameState::Finished;
             }
             for p in &mut self.buffs {
                 display.draw(p.draw());

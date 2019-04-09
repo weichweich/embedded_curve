@@ -1,7 +1,7 @@
 use libm;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{Circle, Line};
-use stm32f7_discovery::lcd::{Framebuffer, HEIGHT, WIDTH};
+use stm32f7_discovery::lcd::{HEIGHT, WIDTH};
 use core::f32::consts::PI;
 use alloc::{
     vec::Vec,
@@ -9,9 +9,9 @@ use alloc::{
 };
 
 use crate::geometry::{
-    AABBox, Point, Vector2D
+    AABBox, Vector2D
 };
-use crate::display::{LcdDisplay, GameColor};
+use crate::display::GameColor;
 use crate::buffs::{PlayerBuff, Buff};
 
 
@@ -46,7 +46,7 @@ impl InputRegion {
         }
     }
 
-    pub fn is_active(&self, touches: &[Point]) -> bool {
+    pub fn is_active(&self, touches: &[Coord]) -> bool {
         for touch in touches {
             if self.sensitive_rect.inside(touch.clone()) {
                 return true;
@@ -75,6 +75,7 @@ pub struct Player {
     speed: f32,
     buffs: Vec<PlayerBuff>,
     trace: Vec<CurveSegment>,
+    pub score: i32,
 }
 
 impl Player {
@@ -95,10 +96,11 @@ impl Player {
             radius,
             buffs: Vec::new(),
             trace,
+            score: 0,
         }
     }
 
-    pub fn get_player_input(&self, touches: &[Point]) -> PlayerInput {
+    pub fn get_player_input(&self, touches: &[Coord]) -> PlayerInput {
         let push_left = self.input_left.is_active(touches);
         let push_right = self.input_right.is_active(touches);
 
@@ -110,7 +112,7 @@ impl Player {
         }
     }
 
-    pub fn draw<F: Framebuffer>(&self, display: &mut LcdDisplay<F>) {
+    pub fn draw<D: Drawing<GameColor>>(&self, display: &mut D) {
         let color = self.buffs
                         .iter()
                         .fold(self.color, |acc, func| (func.change_color)(acc));
@@ -181,7 +183,7 @@ impl Player {
         }
     }
 
-    pub fn act(&mut self, touches: &[Point]) {
+    pub fn act(&mut self, touches: &[Coord]) {
         let d = self.buffs.iter().fold(5.0, |acc, func| (func.change_rotation)(acc));
         let a = d * (PI) / 180.0;
         let mut new_trace_segment = false;

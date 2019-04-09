@@ -120,23 +120,23 @@ impl Add<Vector2D> for Point {
 
 #[derive(Copy,Clone)]
 pub struct AABBox {
-    top_left: Point,
-    bottom_right: Point
+    top_left: Coord,
+    bottom_right: Coord
 }
 
 impl AABBox {
-    pub fn new(top_left: Point, bottom_right: Point) -> Self {
-        assert!(top_left.x < bottom_right.x, "Left point is more to the right than right point");
-        assert!(top_left.y < bottom_right.y, "Top point is more to the bottom than bottom point");
+    pub fn new(top_left: Coord, bottom_right: Coord) -> Self {
+        assert!(top_left[0] < bottom_right[0], "Left point is more to the right than right point");
+        assert!(top_left[1] < bottom_right[1], "Top point is more to the bottom than bottom point");
         AABBox {
             top_left,
             bottom_right,
         }
     }
 
-    pub fn inside(&self, point: Point) -> bool {
-        (self.top_left.x <= point.x && self.top_left.y <= point.y
-        && point.x <= self.bottom_right.x && point.y <= self.bottom_right.y)
+    pub fn inside(&self, point: Coord) -> bool {
+        (self.top_left[0] <= point[0] && self.top_left[1] <= point[1]
+        && point[0] <= self.bottom_right[0] && point[1] <= self.bottom_right[1])
     }
 }
 

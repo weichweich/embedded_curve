@@ -285,7 +285,8 @@ where F: Framebuffer {
                 let pi = pis.last().unwrap();
 
                 if pi.collides() {
-                    // TODO handle collision with self
+                    player_collision = true;
+                    if cfg!(debug_assertions) {println!("self collision");}
                 } else  { 
                     for pj in pjs {
                         if pi.collides_with(pj) {

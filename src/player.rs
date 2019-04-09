@@ -218,7 +218,7 @@ impl Player {
     fn has_collision(&self, trace: &[CurveSegment]) -> bool {
         // credit to: http://www.sunshine2k.de/coding/java/PointOnLine/PointOnLine.html
         for seg in trace {
-            let e1 = seg.start - seg.end;
+            let e1 = seg.end - seg.start;
             let e2 = self.pos - seg.start;
             let val_dp = e1.dot(e2);
             let len2 = e1.dot(e1);

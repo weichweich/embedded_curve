@@ -153,27 +153,29 @@ fn main() -> ! {
     let mut rng = Rng::init(&mut rng, &mut rcc).expect("RNG init failed");
 
     let mut display = LcdDisplay::new(&mut layer_1);
-
-    let mut cooldown: i32 = 3 * 100;
-
-    let mut last_ticks = system_clock::ticks();
     let mut game = Game::new(2, &mut rng);
-    let mut touches: Vec<Coord> = Vec::new();
+
     loop {
-        let ticks = system_clock::ticks();
-        let d_ticks = ticks - last_ticks;
-        last_ticks = ticks;
-        cooldown -= d_ticks as i32;
+        game.new_game();
 
-        if cooldown > 0 {
-            huge_text_mid(&mut display, &format!("BE READY! FUN STARTS IN {} SECONDS!!", cooldown / 100),
-                          C_BLACK, C_PLAYER_A);
-        } else {
 
-            draw_text_right(&mut display, &format!("<--- Player A: {:04}  --->", game.players[1].score),
-                          C_BLACK, C_PLAYER_A);
-            draw_text_left(&mut display, &format!("<--- Player B: {:04}  --->", game.players[0].score),
-                            C_BLACK, C_PLAYER_B);
+        ready_screen(&mut display, 3*100);
+        display.clear();
+
+        draw_text_right(&mut display, &format!("<--- Player A: {:04}  --->", game.players[0].score),
+                        C_BLACK, C_PLAYER_A);
+        draw_text_left(&mut display, &format!("<--- Player B: {:04}  --->", game.players[1].score),
+                        C_BLACK, C_PLAYER_B);
+
+        let mut last_ticks = system_clock::ticks();
+        let mut touches: Vec<Coord> = Vec::new();
+        loop {
+            let ticks = system_clock::ticks();
+            let d_ticks = ticks - last_ticks;
+            if d_ticks < 3 {
+                continue;
+            }
+            last_ticks = system_clock::ticks();
 
             for touch in &touch::touches(&mut i2c_3).unwrap() {
                 touches.push(Coord::new(
@@ -183,14 +185,23 @@ fn main() -> ! {
             }
             match game.step(&mut rng, &mut display, &touches, d_ticks) {
                 GameState::Finished => {
-                    game.new_game();
-                    display.clear();
-                    cooldown = 100*3;
+                    break;
                 },
                 GameState::Playing => {},
             }
             touches.clear();
         }
+    }
+}
+
+fn ready_screen<D>(display: &mut D, cooldown: i32)
+where D: Drawing<GameColor> {
+    let start_tm = system_clock::ticks();
+    let mut passed = (system_clock::ticks() - start_tm) as i32;
+    while passed < cooldown {
+        huge_text_mid(display, &format!("BE READY! FUN STARTS IN {} SECONDS!!", (cooldown - passed) / 100),
+                      C_BLACK, C_PLAYER_A);
+        passed = (system_clock::ticks() - start_tm) as i32;
     }
 }
 

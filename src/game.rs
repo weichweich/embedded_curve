@@ -2,9 +2,6 @@ use alloc::{
     vec::Vec,
     boxed::Box,
 };
-use stm32f7::stm32f7x6::{
-    I2C3,
-};
 use stm32f7_discovery::{
     lcd::{HEIGHT, WIDTH},
     random::Rng,
@@ -94,6 +91,7 @@ impl Game {
         for p in &mut self.players {
             p.clear_trace();
         }
+        self.buffs.clear();
         self.state = GameState::Playing;
     }
 
@@ -113,24 +111,22 @@ impl Game {
     }
 
     fn player_player_collision(&self) -> Option<usize> {
-        for i in 1..=self.players.len() {
-            let (pis, pjs) = self.players.split_at(i);
+        for i in 0..self.players.len() {
+            let (pis, pjs) = self.players.split_at(i+1);
             let pi = pis.last().unwrap();
 
             if pi.collides() {
                 if cfg!(debug_assertions) {println!("self collision {}", i);}
-                return Some(i-1);
+                return Some(i);
             } else  { 
-                let mut j = i;
-                for pj in pjs {
+                for (h, pj) in pjs.iter().enumerate() {
                     if pi.collides_with(pj) {
                         if cfg!(debug_assertions) {println!("collision i {}", i);}
-                        return Some(i-1)
+                        return Some(i)
                     } else if pj.collides_with(pi) {
-                        if cfg!(debug_assertions) {println!("collision j {}", j);}
-                        return Some(j-1)
+                        if cfg!(debug_assertions) {println!("collision j {}", h+i+1);}
+                        return Some(h+i+1)
                     }
-                    j += 1;
                 }
             }
         }

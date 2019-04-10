@@ -1,4 +1,4 @@
-use crate::player::{Player};
+use crate::player::{Curve};
 use crate::display::{
     GameColor
 };
@@ -18,7 +18,7 @@ const IMG_COLOR: [u8; 10*10*3] = *include_bytes!("color.data");
 
 
 pub trait Buff {
-    fn apply_player(&self, player: &mut Player);
+    fn apply_player(&self, player: &mut Curve);
     fn clear_screen(&self) -> bool;
     fn draw(&self) -> ImgIterator;
     fn aabb(&self) -> (Coord, Coord);
@@ -48,7 +48,7 @@ impl FastPlayerBuffSprite {
 }
 
 impl Buff for FastPlayerBuffSprite {
-    fn apply_player(&self, player: &mut Player) {
+    fn apply_player(&self, player: &mut Curve) {
         fn change_color(color: GameColor) -> GameColor {color}
         fn change_rotation(rotation: f32) -> f32 {rotation}
         fn change_speed(speed: f32) -> f32 {speed + 1.0}
@@ -95,7 +95,7 @@ impl ClearBuff {
 }
 
 impl Buff for ClearBuff {
-    fn apply_player(&self, _player: &mut Player) {
+    fn apply_player(&self, _player: &mut Curve) {
         _player.clear_trace();
     }
 
@@ -129,7 +129,7 @@ impl ChangeDirBuff {
 
 impl Buff for ChangeDirBuff {
 
-    fn apply_player(&self, player: &mut Player) {
+    fn apply_player(&self, player: &mut Curve) {
         fn change_color(color: GameColor) -> GameColor {color}
         fn change_rotation(rotation: f32) -> f32 {360_f32-rotation}
         fn change_speed(speed: f32) -> f32 {speed}
@@ -173,7 +173,7 @@ impl SlowBuff {
 }
 
 impl Buff for SlowBuff {
-    fn apply_player(&self, player: &mut Player) {
+    fn apply_player(&self, player: &mut Curve) {
         fn change_color(color: GameColor) -> GameColor {color}
         fn change_rotation(rotation: f32) -> f32 {rotation}
         fn change_speed(speed: f32) -> f32 {speed - 0.5}
@@ -217,7 +217,7 @@ impl BigBuff {
 }
 
 impl Buff for BigBuff {
-    fn apply_player(&self, player: &mut Player) {
+    fn apply_player(&self, player: &mut Curve) {
         fn change_color(color: GameColor) -> GameColor {color}
         fn change_rotation(rotation: f32) -> f32 {rotation}
         fn change_speed(speed: f32) -> f32 {speed}
@@ -261,7 +261,7 @@ impl SmallBuff {
 }
 
 impl Buff for SmallBuff {
-    fn apply_player(&self, player: &mut Player) {
+    fn apply_player(&self, player: &mut Curve) {
         fn change_color(color: GameColor) -> GameColor {color}
         fn change_rotation(rotation: f32) -> f32 {rotation}
         fn change_speed(speed: f32) -> f32 {speed}
@@ -305,7 +305,7 @@ impl ColorBuff {
 }
 
 impl Buff for ColorBuff {
-    fn apply_player(&self, player: &mut Player) {
+    fn apply_player(&self, player: &mut Curve) {
         fn change_color(color: GameColor) -> GameColor {
             GameColor{value: color.value / 2}
         }

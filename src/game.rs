@@ -21,7 +21,7 @@ use crate::{
     BOTTOM_MID, LEFT_MID, TOP_LEFT, RIGHT_MID, TOP_MID, BOTTOM_RIGHT, MID_MID,
     get_rand_num, C_PLAYER_A, C_PLAYER_B,
     geometry::AABBox,
-    player::{Player, Collide, CollideSelf},
+    player::{Curve, Collide, CollideSelf},
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -32,7 +32,7 @@ pub enum GameState {
 
 
 pub struct Game {
-    pub players: Vec<Player>,
+    pub players: Vec<Curve>,
     buffs: Vec<Box<Buff>>,
     tt_update: isize,
     tt_new_buff: isize,
@@ -54,7 +54,7 @@ impl Game {
         let angle_a = get_rand_num(rng) as f32 % 360_f32;
         let angle_b = get_rand_num(rng) as f32 % 360_f32;
         fn to_coord(t:(i32, i32)) -> Coord {Coord::new(t.0, t.1)};
-        let player_a = Player::new(
+        let player_a = Curve::new(
             AABBox::new(to_coord(MID_MID), to_coord(BOTTOM_RIGHT)),
             AABBox::new(to_coord(TOP_MID), to_coord(RIGHT_MID)),
             C_PLAYER_A,
@@ -62,7 +62,7 @@ impl Game {
             2,
             angle_a,
         );
-        let player_b = Player::new(
+        let player_b = Curve::new(
             AABBox::new(to_coord(TOP_LEFT), to_coord(MID_MID)),
             AABBox::new(to_coord(LEFT_MID), to_coord(BOTTOM_MID)),
             C_PLAYER_B,
@@ -71,7 +71,7 @@ impl Game {
             angle_b,
         );
         let buffs: Vec<Box<Buff>> = Vec::new();
-        let mut players: Vec<Player> = Vec::new();
+        let mut players: Vec<Curve> = Vec::new();
         players.push(player_a);
         players.push(player_b);
         Self {

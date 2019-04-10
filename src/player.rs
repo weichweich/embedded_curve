@@ -65,7 +65,7 @@ struct CurveSegment {
 }
 
 
-pub struct Player {
+pub struct Curve {
     input_left: InputRegion,
     input_right: InputRegion,
     pos: Vector2D,
@@ -78,7 +78,7 @@ pub struct Player {
     pub score: i32,
 }
 
-impl Player {
+impl Curve {
     pub fn new(left_input_box: AABBox, right_input_box: AABBox, color: GameColor,
                start_pos: (f32, f32), radius: u32, angle: f32) -> Self {
         let a = angle * PI / 180.0;
@@ -86,7 +86,7 @@ impl Player {
         let mut trace: Vec<CurveSegment> = Vec::new();
         trace.push(CurveSegment{start:pos, end: pos, radius});
 
-        Self {
+        Curve {
             input_left: InputRegion::new(left_input_box),
             input_right: InputRegion::new(right_input_box),
             pos,
@@ -246,7 +246,7 @@ impl Player {
     }
 }
 
-impl CollideSelf for Player {
+impl CollideSelf for Curve {
     fn collides(&self) -> bool {
         let take = self.trace.len().checked_sub((self.radius * 2) as usize);
         match take {
@@ -256,7 +256,7 @@ impl CollideSelf for Player {
     }
 }
 
-impl Collide<Box<Buff>> for Player {
+impl Collide<Box<Buff>> for Curve {
     fn collides_with(&self, incoming: &Box<Buff>) -> bool {
         let b_pos = (*incoming).get_pos();
         let dist_x = libm::fabsf(self.pos.x - b_pos[0] as f32);
@@ -267,8 +267,8 @@ impl Collide<Box<Buff>> for Player {
     }
 }
 
-impl Collide<Player> for Player {
-    fn collides_with(&self, incoming: &Player) -> bool {
+impl Collide<Curve> for Curve {
+    fn collides_with(&self, incoming: &Curve) -> bool {
         self.has_collision(&incoming.trace)
     }
 }

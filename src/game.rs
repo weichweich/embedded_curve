@@ -22,6 +22,7 @@ use crate::{
     get_rand_num, C_PLAYER_A, C_PLAYER_B,
     geometry::AABBox,
     player::{Curve, Collide, CollideSelf},
+    border::Border,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -38,6 +39,7 @@ pub struct Game {
     tt_new_buff: isize,
     last_time_update: isize,
     state: GameState,
+    border: Border,
 }
 
 impl Game {
@@ -81,6 +83,7 @@ impl Game {
             last_time_update: 0,
             tt_new_buff: 0,
             state: GameState::Playing,
+            border: Border::new(),
         }
     }
 
@@ -133,6 +136,19 @@ impl Game {
         None
     }
 
+    fn player_border_collision(&mut self) {
+        let mut loosers = Vec::new();
+        for (i, p) in self.players.iter().enumerate() {
+            if p.collides_with(&(self.border) ) { 
+                loosers.push(i);
+            }
+        }
+        for looser in loosers {
+            self.player_lost(looser);
+            self.state = GameState::Finished;
+        }
+    }
+
     fn player_buff_collision<D>(&mut self, display: &mut D)
     where D: Drawing<GameColor> {
         let mut clear_all = false;
@@ -172,6 +188,7 @@ impl Game {
         }
 
         self.update_buffs(rng, dt);
+        self.border.draw(display);
 
         self.tt_update -= dt as isize;
         if self.tt_update < 0 {
@@ -183,6 +200,7 @@ impl Game {
                 self.player_lost(i);
                 self.state = GameState::Finished;
             }
+            self.player_border_collision();
             for p in &mut self.buffs {
                 display.draw(p.draw());
             }
@@ -201,7 +219,7 @@ fn new_rand_buff(rng: &mut Rng) -> Box<Buff + 'static> {
         (get_rand_num(rng) as f32 % HEIGHT as f32) as i32,
     );
     let rand = get_rand_num(rng);
-    match (rand % 7) +3 {
+    match 4  { //(rand % 7)
         0 => Box::new(FastPlayerBuffSprite::new(Coord::new(pos_buff.0, pos_buff.1))),
         1 => Box::new(ClearBuff::new(Coord::new(pos_buff.0, pos_buff.1))),
         2 => Box::new(ChangeDirBuff::new(Coord::new(pos_buff.0, pos_buff.1))),

@@ -19,6 +19,7 @@ pub mod display;
 pub mod geometry;
 pub mod player;
 pub mod game;
+pub mod border;
 
 use embedded_graphics::{
     prelude::*,

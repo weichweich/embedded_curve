@@ -12,6 +12,7 @@ use crate::geometry::{
     AABBox, Vector2D
 };
 use crate::display::GameColor;
+use crate::border::Border;
 use crate::buffs::{PlayerBuff, Buff};
 
 
@@ -281,5 +282,18 @@ impl Collide<Box<Buff>> for Curve {
 impl Collide<Curve> for Curve {
     fn collides_with(&self, incoming: &Curve) -> bool {
         self.has_collision(&incoming.trace)
+    }
+}
+
+impl Collide<Border> for Curve {
+    fn collides_with(&self, border: &Border) -> bool {
+
+        if self.pos.x > border.top_left[0] as f32 
+        && self.pos.y > border.top_left[1] as f32 
+        && self.pos.x < border.bottom_right[0] as f32 
+        && self.pos.y < border.bottom_right[1] as f32 {
+            return false;
+        }
+        true
     }
 }

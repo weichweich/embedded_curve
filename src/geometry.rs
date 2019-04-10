@@ -120,8 +120,8 @@ impl Add<Vector2D> for Point {
 
 #[derive(Copy,Clone)]
 pub struct AABBox {
-    top_left: Coord,
-    bottom_right: Coord
+    pub top_left: Coord,
+    pub bottom_right: Coord
 }
 
 impl AABBox {

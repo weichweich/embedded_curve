@@ -93,6 +93,16 @@ impl Player {
     }
 
     pub fn draw<D: Drawing<GameColor>>(&self, display: &mut D) {
+        if cfg!(debug_assertions) {
+            display.draw(Rect::new(self.input_left.sensitive_rect.top_left,
+                                   self.input_left.sensitive_rect.bottom_right)
+                        .with_stroke(Some(self.color))
+                        .into_iter());
+            display.draw(Rect::new(self.input_right.sensitive_rect.top_left,
+                                   self.input_right.sensitive_rect.bottom_right)
+                        .with_stroke(Some(self.color))
+                        .into_iter());
+        }
         self.curve.draw(display);
     }
 }
@@ -119,14 +129,30 @@ impl Game {
         let buffs: Vec<Box<Buff>> = Vec::new();
         let mut players: Vec<Player> = Vec::new();
         for (i, c) in player_colors.iter().enumerate() {
-            match i % 2 {
+            match i % 4 {
                 0 => players.push(Player::new(*c, rng,
-                    AABBox::new(to_coord(MID_MID), to_coord(BOTTOM_RIGHT)),
-                    AABBox::new(to_coord(TOP_MID), to_coord(RIGHT_MID)),
+                    AABBox::new(Coord::new((3*WIDTH/4) as i32, 0),
+                                Coord::new(WIDTH as i32, (HEIGHT/2) as i32)),
+                    AABBox::new(Coord::new((3*WIDTH/4) as i32, (HEIGHT/2) as i32),
+                                Coord::new(WIDTH as i32, HEIGHT as i32)),
                 )),
                 1 => players.push(Player::new(*c, rng,
-                    AABBox::new(to_coord(TOP_LEFT), to_coord(MID_MID)),
-                    AABBox::new(to_coord(LEFT_MID), to_coord(BOTTOM_MID)),
+                    AABBox::new(Coord::new(0, 0),
+                                Coord::new((WIDTH/4) as i32, (HEIGHT/2) as i32)),
+                    AABBox::new(Coord::new(0, (HEIGHT/2) as i32),
+                                Coord::new((WIDTH/4) as i32, HEIGHT as i32)),
+                )),
+                2 => players.push(Player::new(*c, rng,
+                    AABBox::new(Coord::new((WIDTH/4) as i32, 0),
+                                Coord::new((WIDTH/2) as i32, (HEIGHT/2) as i32)),
+                    AABBox::new(Coord::new((WIDTH/2) as i32, 0),
+                                Coord::new((3*WIDTH/4) as i32, (HEIGHT/2) as i32)),
+                )),
+                3 => players.push(Player::new(*c, rng,
+                    AABBox::new(Coord::new((WIDTH/4) as i32, (HEIGHT/2) as i32),
+                                Coord::new((WIDTH/2) as i32, HEIGHT as i32)),
+                    AABBox::new(Coord::new((WIDTH/2) as i32, (HEIGHT/2) as i32),
+                                Coord::new((3*WIDTH/4) as i32, HEIGHT as i32)),
                 )),
                 _ => {},
             }

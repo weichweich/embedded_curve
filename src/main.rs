@@ -173,6 +173,10 @@ fn main() -> ! {
                         C_BLACK, C_PLAYER_A);
         draw_text_left(&mut display, &format!("<--- Player B: {:04}  --->", game.players[1].score),
                         C_BLACK, C_PLAYER_B);
+        draw_text_top(&mut display, &format!("<--- Player C: {:04}  --->", game.players[2].score),
+                        C_BLACK, C_PLAYER_C);
+        draw_text_bottom(&mut display, &format!("<--- Player D: {:04}  --->", game.players[3].score),
+                        C_BLACK, C_PLAYER_D);
 
         let mut last_ticks = system_clock::ticks();
         let mut touches: Vec<Coord> = Vec::new();
@@ -246,6 +250,30 @@ where D: Drawing<GameColor> {
                 .translate(Coord::new(len as i32, 0))
                 .into_iter()
                 .map(|p| Pixel(UnsignedCoord::new((8 - p.0[1]) as u32, p.0[0]), p.1)));
+}
+
+fn draw_text_top<'a, D>(display: &mut D, text: &'a str, fill_color: GameColor,
+                        text_color: GameColor)
+where D: Drawing<GameColor> {
+    let len = (text.len() * 6) as i32;
+    display.draw(Font6x8::render_str(text)
+                .with_stroke(Some(text_color))
+                .with_fill(Some(fill_color))
+                .translate(Coord::new((WIDTH as i32 - len) / 2, 0))
+                .into_iter()
+                .map(|p| Pixel(UnsignedCoord::new(WIDTH as u32 - p.0[0],
+                                                  8-p.0[1]), p.1)));
+}
+
+fn draw_text_bottom<'a, D>(display: &mut D, text: &'a str, fill_color: GameColor,
+                           text_color: GameColor)
+where D: Drawing<GameColor> {
+    let len = (text.len() * 6) as i32;
+    display.draw(Font6x8::render_str(text)
+                .with_stroke(Some(text_color))
+                .with_fill(Some(fill_color))
+                .translate(Coord::new((WIDTH as i32 - len) / 2, (HEIGHT - 8) as i32))
+                .into_iter());
 }
 
 fn get_rand_num(rnd: &mut Rng) -> u32 {

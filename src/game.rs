@@ -13,7 +13,7 @@ use embedded_graphics::{
 
 use crate::{
     display::GameColor,
-    player::{PAD_LEFT, PAD_RIGHT},
+    player::{PAD_LEFT, PAD_RIGHT, PAD_BOTTOM, PAD_TOP},
     buffs::{
         Buff, BigBuff, SmallBuff, FastPlayerBuffSprite, SlowBuff, ChangeDirBuff,
         ClearBuff, ColorBuff
@@ -110,7 +110,6 @@ pub struct Game {
     tt_update: isize,
     tt_new_buff: isize,
     last_time_update: isize,
-    state: GameState,
     border: Border,
 }
 
@@ -138,7 +137,6 @@ impl Game {
             tt_update: 0,
             last_time_update: 0,
             tt_new_buff: 0,
-            state: GameState::Playing,
             border: Border::new(),
         }
     }
@@ -151,7 +149,6 @@ impl Game {
             p.reset(rng);
         }
         self.buffs.clear();
-        self.state = GameState::Playing;
     }
 
     fn update_buffs(&mut self, rng: &mut Rng, dt: usize) {
@@ -196,15 +193,14 @@ impl Game {
     }
 
     fn player_border_collision(&mut self) {
-        let mut loosers = Vec::new();
+        let mut losers = Vec::new();
         for (i, p) in self.players.iter().enumerate() {
             if p.curve.collides_with(&self.border) {
-                loosers.push(i);
+                losers.push(i);
             }
         }
-        for looser in loosers {
+        for looser in losers {
             self.player_lost(looser);
-            self.state = GameState::Finished;
         }
     }
 
@@ -271,32 +267,29 @@ impl Game {
                 p.draw(display);
             }
         }
-        self.state
+        GameState::Playing
     }
 }
 
 fn rand_pos(rng: &mut Rng) -> (f32, f32) {
     (
         PAD_LEFT + get_rand_num(rng) as f32 % (WIDTH as f32 - PAD_LEFT - PAD_RIGHT),
-        get_rand_num(rng) as f32 % HEIGHT as f32,
+        PAD_TOP + get_rand_num(rng) as f32 % (HEIGHT as f32 - PAD_TOP - PAD_BOTTOM),
     )
 }
 
 fn new_rand_buff(rng: &mut Rng) -> Box<Buff + 'static> {
-    let pos_buff = (
-        (PAD_LEFT + get_rand_num(rng) as f32 
-            % (WIDTH as f32 - PAD_LEFT - PAD_RIGHT)) as i32,
-        (get_rand_num(rng) as f32 % HEIGHT as f32) as i32,
-    );
+    let pos_buff = rand_pos(rng);
+    let pos_coord = Coord::new(pos_buff.0 as i32, pos_buff.1 as i32);
     let rand = get_rand_num(rng);
     match rand % 7 {
-        0 => Box::new(FastPlayerBuffSprite::new(Coord::new(pos_buff.0, pos_buff.1))),
-        1 => Box::new(ClearBuff::new(Coord::new(pos_buff.0, pos_buff.1))),
-        2 => Box::new(ChangeDirBuff::new(Coord::new(pos_buff.0, pos_buff.1))),
-        3 => Box::new(SlowBuff::new(Coord::new(pos_buff.0, pos_buff.1))),
-        4 => Box::new(ColorBuff::new(Coord::new(pos_buff.0, pos_buff.1))),
-        5 => Box::new(BigBuff::new(Coord::new(pos_buff.0, pos_buff.1))),
-        6 => Box::new(SmallBuff::new(Coord::new(pos_buff.0, pos_buff.1))),
-        _ => Box::new(SlowBuff::new(Coord::new(pos_buff.0, pos_buff.1))),
+        0 => Box::new(FastPlayerBuffSprite::new(pos_coord)),
+        1 => Box::new(ClearBuff::new(pos_coord)),
+        2 => Box::new(ChangeDirBuff::new(pos_coord)),
+        3 => Box::new(SlowBuff::new(pos_coord)),
+        4 => Box::new(ColorBuff::new(pos_coord)),
+        5 => Box::new(BigBuff::new(pos_coord)),
+        6 => Box::new(SmallBuff::new(pos_coord)),
+        _ => Box::new(SlowBuff::new(pos_coord)),
     }
 }

@@ -289,7 +289,7 @@ fn new_rand_buff(rng: &mut Rng) -> Box<Buff + 'static> {
         (get_rand_num(rng) as f32 % HEIGHT as f32) as i32,
     );
     let rand = get_rand_num(rng);
-    match 4  { //(rand % 7)
+    match rand % 7 {
         0 => Box::new(FastPlayerBuffSprite::new(Coord::new(pos_buff.0, pos_buff.1))),
         1 => Box::new(ClearBuff::new(Coord::new(pos_buff.0, pos_buff.1))),
         2 => Box::new(ChangeDirBuff::new(Coord::new(pos_buff.0, pos_buff.1))),

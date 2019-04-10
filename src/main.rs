@@ -57,6 +57,8 @@ const HEAP_SIZE: usize = 1024 * 1024; // in bytes
 
 const C_PLAYER_A: GameColor = GameColor{value: 0x00_00FF};
 const C_PLAYER_B: GameColor = GameColor{value: 0x00_FF00};
+const C_PLAYER_C: GameColor = GameColor{value: 0xFF_0000};
+const C_PLAYER_D: GameColor = GameColor{value: 0xFF_FF00};
 const C_BLACK: GameColor = GameColor{value: 0x00_0000};
 
 const TOP_LEFT: (i32, i32) = (0, 0);
@@ -81,6 +83,10 @@ const RIGHT_MID: (i32, i32) = (
     WIDTH as i32,
     (HEIGHT / 2) as i32,
 );
+
+pub fn to_coord(t: (i32, i32)) -> Coord {
+    Coord::new(t.0, t.1)
+}
 
 #[entry]
 fn main() -> ! {
@@ -154,10 +160,10 @@ fn main() -> ! {
     let mut rng = Rng::init(&mut rng, &mut rcc).expect("RNG init failed");
 
     let mut display = LcdDisplay::new(&mut layer_1);
-    let mut game = Game::new(2, &mut rng);
+    let mut game = Game::new(&[C_PLAYER_A, C_PLAYER_B, C_PLAYER_C, C_PLAYER_D], &mut rng);
 
     loop {
-        game.new_game();
+        game.new_game(&mut rng);
 
 
         ready_screen(&mut display, 3*100);

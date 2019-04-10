@@ -8,9 +8,7 @@ use alloc::{
     boxed::Box
 };
 
-use crate::geometry::{
-    AABBox, Vector2D
-};
+use crate::geometry::Vector2D;
 use crate::display::GameColor;
 use crate::border::Border;
 use crate::buffs::{PlayerBuff, Buff};
@@ -39,28 +37,6 @@ pub enum PlayerInput {
     None
 }
 
-struct InputRegion {
-    sensitive_rect: AABBox
-}
-
-impl InputRegion {
-    pub fn new(boxx: AABBox) -> Self {
-        Self {
-            sensitive_rect: boxx
-        }
-    }
-
-    pub fn is_active(&self, touches: &[Coord]) -> bool {
-        for touch in touches {
-            if self.sensitive_rect.inside(touch.clone()) {
-                return true;
-            }
-        }
-        false
-    }
-}
-
-
 #[derive(Copy, Clone, Debug)]
 struct Segment {
     pub start: Vector2D,
@@ -70,8 +46,6 @@ struct Segment {
 
 
 pub struct Curve {
-    input_left: InputRegion,
-    input_right: InputRegion,
     pos: Vector2D,
     color: GameColor,
     direction: Vector2D,
@@ -83,16 +57,13 @@ pub struct Curve {
 }
 
 impl Curve {
-    pub fn new(left_input_box: AABBox, right_input_box: AABBox, color: GameColor,
-               start_pos: (f32, f32), radius: u32, angle: f32) -> Self {
+    pub fn new(color: GameColor, start_pos: (f32, f32), radius: u32, angle: f32) -> Self {
         let a = angle * PI / 180.0;
         let pos = Vector2D {x: start_pos.0, y: start_pos.1};
         let mut trace: Vec<Segment> = Vec::new();
         trace.push(Segment{start:pos, end: pos, radius});
 
         Curve {
-            input_left: InputRegion::new(left_input_box),
-            input_right: InputRegion::new(right_input_box),
             pos,
             color,
             direction: Vector2D{x: 1.0, y: 0.0}.rotate(a),
@@ -100,19 +71,6 @@ impl Curve {
             radius,
             buffs: Vec::new(),
             trace,
-            score: 0,
-        }
-    }
-
-    pub fn get_player_input(&self, touches: &[Coord]) -> PlayerInput {
-        let push_left = self.input_left.is_active(touches);
-        let push_right = self.input_right.is_active(touches);
-
-        match (push_left, push_right) {
-            (true, true) => PlayerInput::Both,
-            (true, false) => PlayerInput::Left,
-            (false, true) => PlayerInput::Right,
-            (false, false) => PlayerInput::None,
         }
     }
 
@@ -192,11 +150,11 @@ impl Curve {
         }
     }
 
-    pub fn act(&mut self, touches: &[Coord]) {
+    pub fn act(&mut self, input: PlayerInput) {
         let d = self.buffs.iter().fold(5.0, |acc, func| (func.change_rotation)(acc));
         let a = d * (PI) / 180.0;
         let mut new_trace_segment = false;
-        match self.get_player_input(touches) {
+        match input {
             PlayerInput::Left => {
                 self.direction = self.direction.rotate(-a);
                 new_trace_segment = true;

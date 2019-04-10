@@ -219,14 +219,15 @@ impl Game {
     }
 
     fn player_border_collision(&mut self) {
+        if !self.border.active { return; }
         let mut losers = Vec::new();
         for (i, p) in self.players.iter().enumerate() {
             if p.curve.collides_with(&self.border) {
                 losers.push(i);
             }
         }
-        for looser in losers {
-            self.player_lost(looser);
+        for loser in losers {
+            self.player_lost(loser);
         }
     }
 
@@ -238,6 +239,8 @@ impl Game {
             while i < self.buffs.len() {
                 if p.curve.collides_with(&self.buffs[i]) {
                     self.buffs[i].apply_player(&mut p.curve);
+                    self.buffs[i].apply_border(&mut self.border);
+
                     clear_all |= self.buffs[i].clear_screen();
                     let aabb = self.buffs[i].aabb();
                     display.draw(Rect::new(aabb.0, aabb.1)
@@ -274,8 +277,7 @@ impl Game {
         }
 
         self.update_buffs(rng, dt);
-        self.border.draw(display);
-
+        
         self.tt_update -= dt as isize;
         if self.tt_update < 0 {
             self.tt_update = 3;
@@ -292,6 +294,7 @@ impl Game {
             for p in &mut self.players {
                 p.draw(display);
             }
+            self.border.draw(display);
         }
         GameState::Playing
     }

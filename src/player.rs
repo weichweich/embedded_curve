@@ -248,10 +248,10 @@ impl Collide<Curve> for Curve {
 impl Collide<Border> for Curve {
     fn collides_with(&self, border: &Border) -> bool {
 
-        if self.pos.x > border.top_left[0] as f32 
-        && self.pos.y > border.top_left[1] as f32 
-        && self.pos.x < border.bottom_right[0] as f32 
-        && self.pos.y < border.bottom_right[1] as f32 {
+        if self.pos.x - (self.radius as f32) > border.top_left[0] as f32 
+        && self.pos.y - (self.radius as f32) > border.top_left[1] as f32 
+        && self.pos.x + (self.radius as f32) < border.bottom_right[0] as f32 
+        && self.pos.y + (self.radius as f32) < border.bottom_right[1] as f32 {
             return false;
         }
         true

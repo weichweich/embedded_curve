@@ -50,6 +50,7 @@ impl InputRegion {
 
 pub struct Player {
     pub score: u32,
+    pub lost: bool,
     curve: Curve,
     color: GameColor,
     input_left: InputRegion,
@@ -61,6 +62,7 @@ impl Player {
                input_right: AABBox) -> Self {
         Self {
             score: 0,
+            lost: false,
             color,
             curve: Curve::new(color, rand_pos(rng), CURVE_RADIUS,
                               (get_rand_num(rng) % 360) as f32),
@@ -76,9 +78,11 @@ impl Player {
     pub fn reset(&mut self, rng: &mut Rng) {
         self.curve = Curve::new(self.color, rand_pos(rng), CURVE_RADIUS,
                                 (get_rand_num(rng) % 360) as f32);
+        self.lost = false;
     }
 
     pub fn act(&mut self, touches: &[Coord]) {
+        if self.lost { return; }
         match (self.input_left.is_active(touches),
                self.input_right.is_active(touches)) {
             (true, true) => self.curve.act(PlayerInput::Both),
@@ -165,27 +169,30 @@ impl Game {
         }
     }
 
-    fn player_player_collision(&self) -> Option<usize> {
+    fn player_player_collision(&mut self) {
+        let mut losers = Vec::new();
         for i in 0..self.players.len() {
             let (pis, pjs) = self.players.split_at(i+1);
             let pi = pis.last().unwrap();
 
             if pi.curve.collides() {
                 if cfg!(debug_assertions) {println!("self collision {}", i);}
-                return Some(i);
+                losers.push(i);
             } else  { 
                 for (h, pj) in pjs.iter().enumerate() {
                     if pi.curve.collides_with(&pj.curve) {
                         if cfg!(debug_assertions) {println!("collision i {}", i);}
-                        return Some(i)
+                        losers.push(i);
                     } else if pj.curve.collides_with(&pi.curve) {
                         if cfg!(debug_assertions) {println!("collision j {}", h+i+1);}
-                        return Some(h+i+1)
+                        losers.push(h+i+1);
                     }
                 }
             }
         }
-        None
+        for loser in losers {
+            self.player_lost(loser);
+        }
     }
 
     fn player_border_collision(&mut self) {
@@ -227,16 +234,21 @@ impl Game {
     }
 
     fn player_lost(&mut self, loser_i: usize) {
-        for (j, p) in self.players.iter_mut().enumerate() {
-            if loser_i != j {p.score += 1;}
+        if !self.players[loser_i].lost {
+            self.players[loser_i].lost = true;
+            for (j, p) in self.players.iter_mut().enumerate() {
+                if loser_i != j && !p.lost { p.score += 1; }
+            }
         }
     }
 
     pub fn step<D>(&mut self, rng: &mut Rng, display: &mut D, touches: &[Coord], dt: usize) -> GameState
     where D: Drawing<GameColor> {
-        match self.state {
-            GameState::Playing => {},
-            GameState::Finished => return GameState::Finished,
+        let active_player = self.players.iter()
+                                        .fold(0, |acc, p| if p.lost { acc }
+                                                          else { acc + 1 });
+        if active_player <= 1 {
+            return GameState::Finished;
         }
 
         self.update_buffs(rng, dt);
@@ -247,12 +259,11 @@ impl Game {
             self.tt_update = 3;
 
             self.act(touches, dt);
+
             self.player_buff_collision(display);
-            if let Some(i) = self.player_player_collision() {
-                self.player_lost(i);
-                self.state = GameState::Finished;
-            }
+            self.player_player_collision();
             self.player_border_collision();
+
             for p in &mut self.buffs {
                 display.draw(p.draw());
             }

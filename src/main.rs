@@ -82,6 +82,10 @@ const RIGHT_MID: (i32, i32) = (
     (HEIGHT / 2) as i32,
 );
 
+pub fn to_coord(t: (i32, i32)) -> Coord {
+    Coord::new(t.0, t.1)
+}
+
 #[entry]
 fn main() -> ! {
     let core_peripherals = CorePeripherals::take().unwrap();
@@ -154,10 +158,10 @@ fn main() -> ! {
     let mut rng = Rng::init(&mut rng, &mut rcc).expect("RNG init failed");
 
     let mut display = LcdDisplay::new(&mut layer_1);
-    let mut game = Game::new(2, &mut rng);
+    let mut game = Game::new(&[C_PLAYER_A, C_PLAYER_B], &mut rng);
 
     loop {
-        game.new_game();
+        game.new_game(&mut rng);
 
 
         ready_screen(&mut display, 3*100);

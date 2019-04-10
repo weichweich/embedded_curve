@@ -18,6 +18,9 @@ use crate::buffs::{PlayerBuff, Buff};
 
 pub const PAD_LEFT: f32 = 10_f32;
 pub const PAD_RIGHT: f32 = 10_f32;
+pub const PAD_BOTTOM: f32 = 10_f32;
+pub const PAD_TOP: f32 = 10_f32;
+
 
 
 pub trait Collide<T> {

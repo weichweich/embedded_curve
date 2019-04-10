@@ -58,7 +58,7 @@ impl InputRegion {
 
 
 #[derive(Copy, Clone, Debug)]
-struct CurveSegment {
+struct Segment {
     pub start: Vector2D,
     pub end: Vector2D,
     pub radius: u32,
@@ -74,8 +74,8 @@ pub struct Curve {
     radius: u32,
     speed: f32,
     buffs: Vec<PlayerBuff>,
-    trace: Vec<CurveSegment>,
     pub score: i32,
+    trace: Vec<Segment>,
 }
 
 impl Curve {
@@ -83,8 +83,8 @@ impl Curve {
                start_pos: (f32, f32), radius: u32, angle: f32) -> Self {
         let a = angle * PI / 180.0;
         let pos = Vector2D {x: start_pos.0, y: start_pos.1};
-        let mut trace: Vec<CurveSegment> = Vec::new();
-        trace.push(CurveSegment{start:pos, end: pos, radius});
+        let mut trace: Vec<Segment> = Vec::new();
+        trace.push(Segment{start:pos, end: pos, radius});
 
         Curve {
             input_left: InputRegion::new(left_input_box),
@@ -141,12 +141,13 @@ impl Curve {
         }
     }
 
-    fn update_pos(&mut self, mut new_trace_segment: bool) {
+    fn update_pos(&mut self) -> bool{
         let speed = self.buffs
                         .iter()
                         .fold(self.speed, |acc, func| (func.change_speed)(acc));
         let mut new_x = (self.pos.x + self.direction.x * speed) as f32;
         let mut new_y = (self.pos.y + self.direction.y * speed) as f32;
+        let mut new_trace_segment: bool = false;
         if new_x < PAD_LEFT {
             new_x = WIDTH as f32 - PAD_RIGHT;
             new_trace_segment = true;
@@ -162,8 +163,12 @@ impl Curve {
             new_y = 0.5;
         }
         self.pos = Vector2D{x: new_x, y: new_y};
+        new_trace_segment
+    }
+
+    fn update_trace(&mut self, new_trace_segment: bool) {
         if new_trace_segment {
-            self.trace.push(CurveSegment{start: self.pos, end: self.pos,
+            self.trace.push(Segment{start: self.pos, end: self.pos,
                                          radius: self.radius});
         } else {
             let mut last = self.trace.last_mut().unwrap();
@@ -200,8 +205,9 @@ impl Curve {
         }
         let last_seg = self.trace.last().unwrap();
         new_trace_segment &= (last_seg.start - last_seg.end).length() > 2_f32;
-
-        self.update_pos(new_trace_segment);
+        new_trace_segment |= self.update_pos();
+        
+        self.update_trace(new_trace_segment);
         self.update_buffs();
     }
 
@@ -211,36 +217,41 @@ impl Curve {
 
     pub fn clear_trace(&mut self) {
         self.trace.clear();
-        self.trace.push(CurveSegment{start: self.pos, end: self.pos, radius:
+        self.trace.push(Segment{start: self.pos, end: self.pos, radius:
                         self.radius});
     }
 
-    fn has_collision(&self, trace: &[CurveSegment]) -> bool {
+    fn has_collision(&self, trace: &[Segment]) -> bool {
         // credit to: http://www.sunshine2k.de/coding/java/PointOnLine/PointOnLine.html
         for seg in trace {
-            let e1 = seg.end - seg.start;
-            let e2 = self.pos - seg.start;
-            let val_dp = e1.dot(e2);
-            let len2 = e1.dot(e1);
-            let proj_p = Vector2D {
-                x: seg.start.x + (val_dp * e1.x) / len2,
-                y: seg.start.y + (val_dp * e1.y) / len2,
-            };
+            if self.collides_with_segment(&seg) { return true; }
+        }
+        false
+    }
 
-            if val_dp < 0_f32 || val_dp > len2 {
-                // projection not on line segment
-                let dist_start = self.pos.distance(seg.start);
-                let dist_end = self.pos.distance(seg.end);
-                let min_dist = dist_end.min(dist_start);
-                if min_dist < (self.radius + seg.radius) as f32 {
-                    if cfg!(debug_assertions) {println!("collision1");}
-                    return true;
-                }
-            } else if proj_p.distance(self.pos) < (self.radius + seg.radius) as f32 {
-                if cfg!(debug_assertions) {
-                    println!("collision2 {} {:?} {:?}", proj_p.distance(self.pos), proj_p, seg);}
+    fn collides_with_segment(&self, seg: &Segment ) -> bool {
+        let e1 = seg.end - seg.start;
+        let e2 = self.pos - seg.start;
+        let val_dp = e1.dot(e2);
+        let len2 = e1.dot(e1);
+        let proj_p = Vector2D {
+            x: seg.start.x + (val_dp * e1.x) / len2,
+            y: seg.start.y + (val_dp * e1.y) / len2,
+        };
+
+        if val_dp < 0_f32 || val_dp > len2 {
+            // projection not on line segment
+            let dist_start = self.pos.distance(seg.start);
+            let dist_end = self.pos.distance(seg.end);
+            let min_dist = dist_end.min(dist_start);
+            if min_dist < (self.radius + seg.radius) as f32 {
+                if cfg!(debug_assertions) {println!("collision1");}
                 return true;
             }
+        } else if proj_p.distance(self.pos) < (self.radius + seg.radius) as f32 {
+            if cfg!(debug_assertions) {
+                println!("collision2 {} {:?} {:?}", proj_p.distance(self.pos), proj_p, seg);}
+            return true;
         }
         false
     }

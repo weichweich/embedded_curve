@@ -306,8 +306,12 @@ impl ColorBuff {
 
 impl Buff for ColorBuff {
     fn apply_player(&self, player: &mut Curve) {
-        fn change_color(color: GameColor) -> GameColor {
-            GameColor{value: color.value / 2}
+        fn change_color(mut color: GameColor) -> GameColor {
+            if color.value == 0xFF_0000 { color.value = 0xFF_FF00; }
+            else if color.value == 0xFF_FF00 { color.value = 0x00_00FF; }
+            else if color.value == 0x00_00FF { color.value = 0x00_FF00; }
+            else { color.value = 0xFF_FF00; }
+            return color;
         }
         fn change_rotation(rotation: f32) -> f32 {rotation}
         fn change_speed(speed: f32) -> f32 {speed}

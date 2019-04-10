@@ -52,7 +52,6 @@ pub struct Curve {
     radius: u32,
     speed: f32,
     buffs: Vec<PlayerBuff>,
-    pub score: i32,
     trace: Vec<Segment>,
 }
 

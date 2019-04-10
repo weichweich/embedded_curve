@@ -198,7 +198,7 @@ impl Game {
     fn player_border_collision(&mut self) {
         let mut loosers = Vec::new();
         for (i, p) in self.players.iter().enumerate() {
-            if p.collides_with(&(self.border) ) { 
+            if p.curve.collides_with(&self.border) {
                 loosers.push(i);
             }
         }

@@ -61,29 +61,6 @@ const C_PLAYER_C: GameColor = GameColor{value: 0xFF_0000};
 const C_PLAYER_D: GameColor = GameColor{value: 0xFF_FF00};
 const C_BLACK: GameColor = GameColor{value: 0x00_0000};
 
-const TOP_LEFT: (i32, i32) = (0, 0);
-const TOP_MID: (i32, i32) = ((WIDTH / 2) as i32, 0);
-const MID_MID: (i32, i32) = (
-    (WIDTH / 2) as i32,
-    (HEIGHT / 2) as i32,
-);
-const BOTTOM_MID: (i32, i32) = (
-    (WIDTH / 2) as i32,
-    HEIGHT as i32,
-);
-const BOTTOM_RIGHT: (i32, i32) = (
-    WIDTH as i32,
-    HEIGHT as i32,
-);
-const LEFT_MID: (i32, i32) = (
-    0,
-    (HEIGHT / 2) as i32,
-);
-const RIGHT_MID: (i32, i32) = (
-    WIDTH as i32,
-    (HEIGHT / 2) as i32,
-);
-
 pub fn to_coord(t: (i32, i32)) -> Coord {
     Coord::new(t.0, t.1)
 }

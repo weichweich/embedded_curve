@@ -3,7 +3,6 @@ use crate::display::{
     GameColor
 };
 use embedded_graphics::{
-    prelude::*,
     coord::Coord,
 };
 use crate::geometry::ImgIterator;
@@ -20,9 +19,9 @@ const IMG_BORDER: [u8; 10*10*3] = *include_bytes!("border.data");
 
 
 pub trait Buff {
-    fn apply_player(&self, player: &mut Curve);
-    fn apply_border(&self, border: &mut Border);
-    fn clear_screen(&self) -> bool;
+    fn apply_player(&self, _player: &mut Curve) {}
+    fn apply_border(&self, _border: &mut Border) {}
+    fn clear_screen(&self) -> bool { false }
     fn draw(&self) -> ImgIterator;
     fn aabb(&self) -> (Coord, Coord);
     fn get_pos(&self) -> Coord;
@@ -66,10 +65,6 @@ impl Buff for FastPlayerBuffSprite {
         });
     }
 
-    fn apply_border(&self, border: &mut Border) {}
-
-    fn clear_screen(&self) -> bool { false }
-
     fn draw(&self) -> ImgIterator {
         ImgIterator::new(&IMG_FAST, 10, self.pos)
     }
@@ -103,8 +98,6 @@ impl Buff for ClearBuff {
     fn apply_player(&self, _player: &mut Curve) {
         _player.clear_trace();
     }
-
-    fn apply_border(&self, border: &mut Border) {}
 
     fn clear_screen(&self) -> bool { true }
 
@@ -151,10 +144,6 @@ impl Buff for ChangeDirBuff {
         });
     }
 
-    fn apply_border(&self, border: &mut Border) {}
-
-    fn clear_screen(&self) -> bool { false }
-
     fn draw(&self) -> ImgIterator {
         ImgIterator::new(&IMG_CH_DIR, 10, self.pos)
     }
@@ -196,10 +185,6 @@ impl Buff for SlowBuff {
             change_radius,
         });
     }
-
-    fn apply_border(&self, border: &mut Border) {}
-
-    fn clear_screen(&self) -> bool { false }
 
     fn draw(&self) -> ImgIterator {
         ImgIterator::new(&IMG_SLOW, 10, self.pos)
@@ -243,10 +228,6 @@ impl Buff for BigBuff {
         });
     }
 
-    fn apply_border(&self, border: &mut Border) {}
-
-    fn clear_screen(&self) -> bool { false }
-
     fn draw(&self) -> ImgIterator {
         ImgIterator::new(&IMG_BIG, 10, self.pos)
     }
@@ -288,10 +269,6 @@ impl Buff for SmallBuff {
             change_radius,
         });
     }
-
-    fn apply_border(&self, border: &mut Border) {}
-
-    fn clear_screen(&self) -> bool { false }
 
     fn draw(&self) -> ImgIterator {
         ImgIterator::new(&IMG_SMALL, 10, self.pos)
@@ -341,10 +318,6 @@ impl Buff for ColorBuff {
         });
     }
 
-    fn apply_border(&self, border: &mut Border) {}
-
-    fn clear_screen(&self) -> bool { false }
-
     fn draw(&self) -> ImgIterator {
         ImgIterator::new(&IMG_COLOR, 10, self.pos)
     }
@@ -372,26 +345,10 @@ impl BorderBuff {
 }
 
 impl Buff for BorderBuff {
-    fn apply_player(&self, player: &mut Curve) {
-        fn change_color(color: GameColor) -> GameColor {color}
-        fn change_rotation(rotation: f32) -> f32 {rotation}
-        fn change_speed(speed: f32) -> f32 {speed}
-        fn change_radius(r: f32) -> f32 {r}
 
-        player.add_buff(PlayerBuff{
-            timeout: 60*30,// 5 secs
-            change_rotation,
-            change_color,
-            change_speed,
-            change_radius,
-        });
-    }
- 
     fn apply_border(&self, border: &mut Border) {
         border.active = !border.active;
     }
-
-    fn clear_screen(&self) -> bool { false }
 
     fn draw(&self) -> ImgIterator {
         ImgIterator::new(&IMG_BORDER, 10, self.pos)

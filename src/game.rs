@@ -16,16 +16,16 @@ use crate::{
     player::{PAD_LEFT, PAD_RIGHT, PAD_BOTTOM, PAD_TOP},
     buffs::{
         Buff, BigBuff, SmallBuff, FastPlayerBuffSprite, SlowBuff, ChangeDirBuff,
-        ClearBuff, ColorBuff
+        ClearBuff, ColorBuff, BorderBuff,
     },
-    BOTTOM_MID, LEFT_MID, TOP_LEFT, RIGHT_MID, TOP_MID, BOTTOM_RIGHT, MID_MID,
-    get_rand_num, to_coord,
+    get_rand_num,
     geometry::AABBox,
     border::Border,
     player::{Curve, Collide, CollideSelf, PlayerInput},
 };
 
 const CURVE_RADIUS: u32 = 3;
+const MAX_TT_BUFF: u32 = 100*3;
 
 pub struct InputRegion {
     sensitive_rect: AABBox
@@ -181,7 +181,7 @@ impl Game {
         self.tt_new_buff -= dt as isize;
 
         if self.tt_new_buff < 0 {
-            self.tt_new_buff = (get_rand_num(rng) % (100 * 60)) as isize;
+            self.tt_new_buff = (get_rand_num(rng) % MAX_TT_BUFF) as isize;
             self.buffs.push(new_rand_buff(rng));
         }
     }
@@ -254,7 +254,9 @@ impl Game {
         }
         if clear_all {
             // display.clear();
-            // TODO: clear players
+            for p in &mut self.players {
+                p.clear_trace();
+            }
         }
     }
 
@@ -311,7 +313,7 @@ fn new_rand_buff(rng: &mut Rng) -> Box<Buff + 'static> {
     let pos_buff = rand_pos(rng);
     let pos_coord = Coord::new(pos_buff.0 as i32, pos_buff.1 as i32);
     let rand = get_rand_num(rng);
-    match rand % 7 {
+    match rand % 8 {
         0 => Box::new(FastPlayerBuffSprite::new(pos_coord)),
         1 => Box::new(ClearBuff::new(pos_coord)),
         2 => Box::new(ChangeDirBuff::new(pos_coord)),
@@ -319,6 +321,7 @@ fn new_rand_buff(rng: &mut Rng) -> Box<Buff + 'static> {
         4 => Box::new(ColorBuff::new(pos_coord)),
         5 => Box::new(BigBuff::new(pos_coord)),
         6 => Box::new(SmallBuff::new(pos_coord)),
+        7 => Box::new(BorderBuff::new(pos_coord)),
         _ => Box::new(SlowBuff::new(pos_coord)),
     }
 }

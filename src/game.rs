@@ -131,10 +131,10 @@ impl Game {
         for (i, c) in player_colors.iter().enumerate() {
             match i % 4 {
                 0 => players.push(Player::new(*c, rng,
-                    AABBox::new(Coord::new((3*WIDTH/4) as i32, 0),
-                                Coord::new(WIDTH as i32, (HEIGHT/2) as i32)),
                     AABBox::new(Coord::new((3*WIDTH/4) as i32, (HEIGHT/2) as i32),
                                 Coord::new(WIDTH as i32, HEIGHT as i32)),
+                    AABBox::new(Coord::new((3*WIDTH/4) as i32, 0),
+                                Coord::new(WIDTH as i32, (HEIGHT/2) as i32)),
                 )),
                 1 => players.push(Player::new(*c, rng,
                     AABBox::new(Coord::new(0, 0),
@@ -143,10 +143,10 @@ impl Game {
                                 Coord::new((WIDTH/4) as i32, HEIGHT as i32)),
                 )),
                 2 => players.push(Player::new(*c, rng,
-                    AABBox::new(Coord::new((WIDTH/4) as i32, 0),
-                                Coord::new((WIDTH/2) as i32, (HEIGHT/2) as i32)),
                     AABBox::new(Coord::new((WIDTH/2) as i32, 0),
                                 Coord::new((3*WIDTH/4) as i32, (HEIGHT/2) as i32)),
+                    AABBox::new(Coord::new((WIDTH/4) as i32, 0),
+                                Coord::new((WIDTH/2) as i32, (HEIGHT/2) as i32)),
                 )),
                 3 => players.push(Player::new(*c, rng,
                     AABBox::new(Coord::new((WIDTH/4) as i32, (HEIGHT/2) as i32),
@@ -175,6 +175,7 @@ impl Game {
             p.reset(rng);
         }
         self.buffs.clear();
+        self.border.active = false;
     }
 
     fn update_buffs(&mut self, rng: &mut Rng, dt: usize) {

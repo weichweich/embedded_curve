@@ -60,6 +60,7 @@ const C_PLAYER_B: GameColor = GameColor{value: 0x00_FF00};
 const C_PLAYER_C: GameColor = GameColor{value: 0xFF_0000};
 const C_PLAYER_D: GameColor = GameColor{value: 0xFF_FF00};
 const C_BLACK: GameColor = GameColor{value: 0x00_0000};
+const C_WHITE: GameColor = GameColor{value: 0xFF_FFFF};
 
 pub fn to_coord(t: (i32, i32)) -> Coord {
     Coord::new(t.0, t.1)
@@ -173,6 +174,19 @@ fn main() -> ! {
             }
             match game.step(&mut rng, &mut display, &touches, d_ticks) {
                 GameState::Finished => {
+                    let mut msg = "Player ? has won!";
+                    for (i, p) in game.players.iter().enumerate() {
+                        if !p.lost {
+                            match i {
+                                0 => msg = "Player A has won!",
+                                1 => msg = "Player B has won!",
+                                2 => msg = "Player C has won!",
+                                3 => msg = "Player D has won!",
+                                _ => msg = "Player ? has won!",
+                            }
+                        }
+                    }
+                    text_above_mid(&mut display, &msg, C_BLACK, C_WHITE);
                     break;
                 },
                 GameState::Playing => {},
@@ -193,9 +207,24 @@ where D: Drawing<GameColor> {
     }
 }
 
+fn text_above_mid<'a, D>(display: &mut D, text: &'a str, fill_color: GameColor, 
+                         text_color: GameColor)
+where 
+    D: Drawing<GameColor>,
+{
+    let len = (text.len() * 12) as i32;
+    display.draw(Font12x16::render_str(text)
+            .with_stroke(Some(text_color))
+            .with_fill(Some(fill_color))
+            .translate(Coord::new((WIDTH as i32 - len) / 2, (HEIGHT as i32 - 8) / 2 - 24))
+            .into_iter())
+}
+
 fn huge_text_mid<'a, D>(display: &mut D, text: &'a str, fill_color: GameColor, 
                         text_color: GameColor)
-where D: Drawing<GameColor> {
+where 
+    D: Drawing<GameColor>,
+{
     let len = (text.len() * 12) as i32;
     display.draw(Font12x16::render_str(text)
             .with_stroke(Some(text_color))

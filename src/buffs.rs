@@ -19,7 +19,7 @@ const IMG_BORDER: [u8; 10*10*3] = *include_bytes!("border.data");
 
 
 pub trait Buff {
-    fn apply_player(&self, _player: &mut Curve) {}
+    fn apply_player(&self, _player: &mut Curve, _collector: bool) {}
     fn apply_border(&self, _border: &mut Border) {}
     fn clear_screen(&self) -> bool { false }
     fn draw(&self) -> ImgIterator;
@@ -29,10 +29,10 @@ pub trait Buff {
 
 pub struct PlayerBuff {
     pub timeout: u32,
-    pub change_rotation: fn(f32) -> f32,
-    pub change_speed: fn(f32) -> f32,
-    pub change_color: fn(GameColor) -> GameColor,
-    pub change_radius: fn(f32) -> f32,
+    pub change_rotation: fn(u32, f32) -> f32,
+    pub change_speed: fn(u32, f32) -> f32,
+    pub change_color: fn(u32, GameColor) -> GameColor,
+    pub change_radius: fn(u32, f32) -> f32,
 }
 
 // Fast Buff
@@ -50,19 +50,21 @@ impl FastPlayerBuffSprite {
 }
 
 impl Buff for FastPlayerBuffSprite {
-    fn apply_player(&self, player: &mut Curve) {
-        fn change_color(color: GameColor) -> GameColor {color}
-        fn change_rotation(rotation: f32) -> f32 {rotation}
-        fn change_speed(speed: f32) -> f32 {speed + 1.0}
-        fn change_radius(r: f32) -> f32 {r}
+    fn apply_player(&self, player: &mut Curve, collector: bool) {
+        if collector {
+            fn change_color(_time: u32, color: GameColor) -> GameColor {color}
+            fn change_rotation(_time: u32, rotation: f32) -> f32 {rotation}
+            fn change_speed(_time: u32, speed: f32) -> f32 {speed + 1.0}
+            fn change_radius(_time: u32, r: f32) -> f32 {r}
 
-        player.add_buff(PlayerBuff{
-            timeout: 60*30,//30 sec
-            change_rotation,
-            change_color,
-            change_speed,
-            change_radius,
-        });
+            player.add_buff(PlayerBuff{
+                timeout: 60*30,//30 sec
+                change_rotation,
+                change_color,
+                change_speed,
+                change_radius,
+            });
+        }
     }
 
     fn draw(&self) -> ImgIterator {
@@ -81,22 +83,22 @@ impl Buff for FastPlayerBuffSprite {
 
 // Clear Buff
 
-pub struct ClearBuff {
+pub struct ClearBuffSprite {
     pos: Coord,
 }
 
-impl ClearBuff {
+impl ClearBuffSprite {
     pub fn new(pos: Coord) -> Self {
-        Self {
+        ClearBuffSprite {
             pos,
         }
     }
 
 }
 
-impl Buff for ClearBuff {
-    fn apply_player(&self, _player: &mut Curve) {
-        _player.clear_trace();
+impl Buff for ClearBuffSprite {
+    fn apply_player(&self, player: &mut Curve, _collector: bool) {
+        player.clear_trace();
     }
 
     fn clear_screen(&self) -> bool { true }
@@ -117,31 +119,33 @@ impl Buff for ClearBuff {
 
 // Change direction Buff
 
-pub struct ChangeDirBuff {
+pub struct ChangeDirBuffSprite {
     pos: Coord,
 }
 
-impl ChangeDirBuff {
+impl ChangeDirBuffSprite {
     pub fn new(pos: Coord) -> Self {
-        Self {pos}
+        ChangeDirBuffSprite {pos}
     }
 }
 
-impl Buff for ChangeDirBuff {
+impl Buff for ChangeDirBuffSprite {
 
-    fn apply_player(&self, player: &mut Curve) {
-        fn change_color(color: GameColor) -> GameColor {color}
-        fn change_rotation(rotation: f32) -> f32 {360_f32-rotation}
-        fn change_speed(speed: f32) -> f32 {speed}
-        fn change_radius(r: f32) -> f32 {r}
+    fn apply_player(&self, player: &mut Curve, collector: bool) {
+        if !collector {
+            fn change_color(_time: u32, color: GameColor) -> GameColor {color}
+            fn change_rotation(_time: u32, rotation: f32) -> f32 {360_f32-rotation}
+            fn change_speed(_time: u32, speed: f32) -> f32 {speed}
+            fn change_radius(_time: u32, r: f32) -> f32 {r}
 
-        player.add_buff(PlayerBuff {
-            timeout: 60*10,//10 secs
-            change_rotation,
-            change_color,
-            change_speed,
-            change_radius
-        });
+            player.add_buff(PlayerBuff {
+                timeout: 100*5,
+                change_rotation,
+                change_color,
+                change_speed,
+                change_radius
+            });
+        }
     }
 
     fn draw(&self) -> ImgIterator {
@@ -160,30 +164,32 @@ impl Buff for ChangeDirBuff {
 
 // Slow Player Buff
 
-pub struct SlowBuff {
+pub struct SlowBuffSprite {
     pos: Coord,
 }
 
-impl SlowBuff {
+impl SlowBuffSprite {
     pub fn new(pos: Coord) -> Self {
-        Self {pos}
+        SlowBuffSprite {pos}
     }
 }
 
-impl Buff for SlowBuff {
-    fn apply_player(&self, player: &mut Curve) {
-        fn change_color(color: GameColor) -> GameColor {color}
-        fn change_rotation(rotation: f32) -> f32 {rotation}
-        fn change_speed(speed: f32) -> f32 {speed - 0.5}
-        fn change_radius(r: f32) -> f32 {r}
+impl Buff for SlowBuffSprite {
+    fn apply_player(&self, player: &mut Curve, collector: bool) {
+        if collector {
+            fn change_color(_time: u32, color: GameColor) -> GameColor {color}
+            fn change_rotation(_time: u32, rotation: f32) -> f32 {rotation}
+            fn change_speed(_time: u32, speed: f32) -> f32 {speed * 0.5}
+            fn change_radius(_time: u32, r: f32) -> f32 {r}
 
-        player.add_buff(PlayerBuff {
-            timeout: 60 * 15,// 5 secs
-            change_rotation,
-            change_color,
-            change_speed,
-            change_radius,
-        });
+            player.add_buff(PlayerBuff {
+                timeout: 100*10,
+                change_rotation,
+                change_color,
+                change_speed,
+                change_radius,
+            });
+        }
     }
 
     fn draw(&self) -> ImgIterator {
@@ -202,30 +208,32 @@ impl Buff for SlowBuff {
 
 // BIG Player Buff
 
-pub struct BigBuff {
+pub struct BigBuffSprite {
     pos: Coord,
 }
 
-impl BigBuff {
+impl BigBuffSprite {
     pub fn new(pos: Coord) -> Self {
-        Self {pos}
+        BigBuffSprite {pos}
     }
 }
 
-impl Buff for BigBuff {
-    fn apply_player(&self, player: &mut Curve) {
-        fn change_color(color: GameColor) -> GameColor {color}
-        fn change_rotation(rotation: f32) -> f32 {rotation}
-        fn change_speed(speed: f32) -> f32 {speed}
-        fn change_radius(r: f32) -> f32 {r * 1.5}
+impl Buff for BigBuffSprite {
+    fn apply_player(&self, player: &mut Curve, collector: bool) {
+        if collector {
+            fn change_color(_time: u32, color: GameColor) -> GameColor {color}
+            fn change_rotation(_time: u32, rotation: f32) -> f32 {rotation}
+            fn change_speed(_time: u32, speed: f32) -> f32 {speed}
+            fn change_radius(_time: u32, r: f32) -> f32 {r * 1.5}
 
-        player.add_buff(PlayerBuff {
-            timeout: 60*30,
-            change_rotation,
-            change_color,
-            change_speed,
-            change_radius,
-        });
+            player.add_buff(PlayerBuff {
+                timeout: 60*30,
+                change_rotation,
+                change_color,
+                change_speed,
+                change_radius,
+            });
+        }
     }
 
     fn draw(&self) -> ImgIterator {
@@ -244,30 +252,32 @@ impl Buff for BigBuff {
 
 // Small Player Buff
 
-pub struct SmallBuff {
+pub struct SmallBuffSprite {
     pos: Coord,
 }
 
-impl SmallBuff {
+impl SmallBuffSprite {
     pub fn new(pos: Coord) -> Self {
-        Self {pos}
+        SmallBuffSprite {pos}
     }
 }
 
-impl Buff for SmallBuff {
-    fn apply_player(&self, player: &mut Curve) {
-        fn change_color(color: GameColor) -> GameColor {color}
-        fn change_rotation(rotation: f32) -> f32 {rotation}
-        fn change_speed(speed: f32) -> f32 {speed}
-        fn change_radius(r: f32) -> f32 {r * 0.5}
+impl Buff for SmallBuffSprite {
+    fn apply_player(&self, player: &mut Curve, collector: bool) {
+        if collector {
+            fn change_color(_time: u32, color: GameColor) -> GameColor {color}
+            fn change_rotation(_time: u32, rotation: f32) -> f32 {rotation}
+            fn change_speed(_time: u32, speed: f32) -> f32 {speed}
+            fn change_radius(_time: u32, r: f32) -> f32 {r * 0.5}
 
-        player.add_buff(PlayerBuff{
-            timeout: 60*30,// 5 secs
-            change_rotation,
-            change_color,
-            change_speed,
-            change_radius,
-        });
+            player.add_buff(PlayerBuff{
+                timeout: 60*30,// 5 secs
+                change_rotation,
+                change_color,
+                change_speed,
+                change_radius,
+            });
+        }
     }
 
     fn draw(&self) -> ImgIterator {
@@ -286,28 +296,28 @@ impl Buff for SmallBuff {
 
 // Color Player Buff
 
-pub struct ColorBuff {
+pub struct ColorBuffSprite {
     pos: Coord,
 }
 
-impl ColorBuff {
+impl ColorBuffSprite {
     pub fn new(pos: Coord) -> Self {
-        Self {pos}
+        ColorBuffSprite {pos}
     }
 }
 
-impl Buff for ColorBuff {
-    fn apply_player(&self, player: &mut Curve) {
-        fn change_color(mut color: GameColor) -> GameColor {
+impl Buff for ColorBuffSprite {
+    fn apply_player(&self, player: &mut Curve, _collector: bool) {
+        fn change_color(_time: u32, mut color: GameColor) -> GameColor {
             if color.value == 0xFF_0000 { color.value = 0xFF_FF00; }
             else if color.value == 0xFF_FF00 { color.value = 0x00_00FF; }
             else if color.value == 0x00_00FF { color.value = 0x00_FF00; }
             else { color.value = 0xFF_FF00; }
             color
         }
-        fn change_rotation(rotation: f32) -> f32 {rotation}
-        fn change_speed(speed: f32) -> f32 {speed}
-        fn change_radius(r: f32) -> f32 {r}
+        fn change_rotation(_time: u32, rotation: f32) -> f32 {rotation}
+        fn change_speed(_time: u32, speed: f32) -> f32 {speed}
+        fn change_radius(_time: u32, r: f32) -> f32 {r}
 
         player.add_buff(PlayerBuff{
             timeout: 60*60,// 5 secs
@@ -334,21 +344,67 @@ impl Buff for ColorBuff {
 
 // Border Player Buff
 
-pub struct BorderBuff {
+pub struct BorderBuffSprite {
     pos: Coord,
 }
 
-impl BorderBuff {
+impl BorderBuffSprite {
     pub fn new(pos: Coord) -> Self {
-        Self {pos}
+        BorderBuffSprite {pos}
     }
 }
 
-impl Buff for BorderBuff {
+impl Buff for BorderBuffSprite {
 
     fn apply_border(&self, border: &mut Border) {
         border.active = !border.active;
         border.drawn = false;
+    }
+
+    fn draw(&self) -> ImgIterator {
+        ImgIterator::new(&IMG_BORDER, 10, self.pos)
+    }
+
+    fn aabb(&self) -> (Coord, Coord){
+        let low_right = Coord::new(self.pos[0]+10, self.pos[1]+10);
+        (self.pos, low_right)
+    }
+
+    fn get_pos(&self) -> Coord {
+        self.pos
+    }
+}
+
+// Drunken Player Buff
+
+pub struct DrunkenBuffSprite {
+    pos: Coord,
+}
+
+impl DrunkenBuffSprite {
+    pub fn new(pos: Coord) -> Self {
+        DrunkenBuffSprite {pos}
+    }
+}
+
+impl Buff for DrunkenBuffSprite {
+    fn apply_player(&self, player: &mut Curve, collector: bool) {
+        if !collector {
+            fn change_color(_time: u32, color: GameColor) -> GameColor {color}
+            fn change_rotation(time: u32, rotation: f32) -> f32 {
+                rotation + 5_f32 - (time as f32 % 10_f32)
+            }
+            fn change_speed(_time: u32, speed: f32) -> f32 {speed}
+            fn change_radius(_time: u32, r: f32) -> f32 {r}
+
+            player.add_buff(PlayerBuff{
+                timeout: 60*10,// 5 secs
+                change_rotation,
+                change_color,
+                change_speed,
+                change_radius,
+            });
+        }
     }
 
     fn draw(&self) -> ImgIterator {

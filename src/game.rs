@@ -15,8 +15,8 @@ use crate::{
     display::GameColor,
     player::{PAD_LEFT, PAD_RIGHT, PAD_BOTTOM, PAD_TOP},
     buffs::{
-        Buff, BigBuff, SmallBuff, FastPlayerBuffSprite, SlowBuff, ChangeDirBuff,
-        ClearBuff, ColorBuff, BorderBuff,
+        Buff, BigBuffSprite, SmallBuffSprite, FastPlayerBuffSprite, SlowBuffSprite, ChangeDirBuffSprite,
+        ClearBuffSprite, ColorBuffSprite, BorderBuffSprite, DrunkenBuffSprite,
     },
     get_rand_num,
     geometry::AABBox,
@@ -234,23 +234,28 @@ impl Game {
     fn player_buff_collision<D>(&mut self, display: &mut D)
     where D: Drawing<GameColor> {
         let mut clear_all = false;
-        for p in &mut self.players {
-            let mut i: usize = 0;
-            while i < self.buffs.len() {
-                if p.curve.collides_with(&self.buffs[i]) {
-                    self.buffs[i].apply_player(&mut p.curve);
-                    self.buffs[i].apply_border(&mut self.border);
+        let mut collected_buffs: Vec<(usize, usize)> = Vec::new();
+        for (i, b) in self.buffs.iter_mut().enumerate() {
+            for (j, p) in self.players.iter().enumerate() {
+                if p.curve.collides_with(b) {
+                    collected_buffs.push((i, j));
+                    b.apply_border(&mut self.border);
 
-                    clear_all |= self.buffs[i].clear_screen();
-                    let aabb = self.buffs[i].aabb();
+                    clear_all |= b.clear_screen();
+                    let aabb = b.aabb();
                     display.draw(Rect::new(aabb.0, aabb.1)
                                     .with_fill(Some(GameColor{value: 0x00_0000}))
                                     .into_iter());
-                    self.buffs.remove(i);
-                } else {
-                    i += 1;
+                    break;
                 }
             }
+        }
+        collected_buffs.reverse();
+        for (b_i, p_i) in collected_buffs {
+            for (j, p) in self.players.iter_mut().enumerate() {
+                self.buffs[b_i].apply_player(&mut p.curve, j==p_i);
+            }
+            self.buffs.remove(b_i);
         }
         if clear_all {
             display.draw(Rect::new(Coord::new(PAD_LEFT as i32, PAD_TOP as i32),
@@ -258,9 +263,6 @@ impl Game {
                                               (HEIGHT as f32 - PAD_BOTTOM) as i32))
                                 .with_fill(Some(GameColor{value: 0x00_0000}))
                                 .into_iter());
-            for p in &mut self.players {
-                p.clear_trace();
-            }
             self.border.drawn = false;
         }
     }
@@ -320,13 +322,14 @@ fn new_rand_buff(rng: &mut Rng) -> Box<Buff + 'static> {
     let rand = get_rand_num(rng);
     match rand % 8 {
         0 => Box::new(FastPlayerBuffSprite::new(pos_coord)),
-        1 => Box::new(ClearBuff::new(pos_coord)),
-        2 => Box::new(ChangeDirBuff::new(pos_coord)),
-        3 => Box::new(SlowBuff::new(pos_coord)),
-        4 => Box::new(ColorBuff::new(pos_coord)),
-        5 => Box::new(BigBuff::new(pos_coord)),
-        6 => Box::new(SmallBuff::new(pos_coord)),
-        7 => Box::new(BorderBuff::new(pos_coord)),
-        _ => Box::new(SlowBuff::new(pos_coord)),
+        1 => Box::new(ClearBuffSprite::new(pos_coord)),
+        2 => Box::new(ChangeDirBuffSprite::new(pos_coord)),
+        3 => Box::new(SlowBuffSprite::new(pos_coord)),
+        4 => Box::new(ColorBuffSprite::new(pos_coord)),
+        5 => Box::new(BigBuffSprite::new(pos_coord)),
+        6 => Box::new(SmallBuffSprite::new(pos_coord)),
+        7 => Box::new(BorderBuffSprite::new(pos_coord)),
+        8 => Box::new(DrunkenBuffSprite::new(pos_coord)),
+        _ => Box::new(SlowBuffSprite::new(pos_coord)),
     }
 }

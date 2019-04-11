@@ -73,10 +73,10 @@ impl Curve {
     pub fn draw<D: Drawing<GameColor>>(&self, display: &mut D) {
         let color = self.buffs
                         .iter()
-                        .fold(self.color, |acc, func| (func.change_color)(acc));
+                        .fold(self.color, |acc, func| (func.change_color)(func.timeout, acc));
         let radius = self.buffs
                          .iter()
-                         .fold(self.radius as f32, |acc, func| (func.change_radius)(acc));
+                         .fold(self.radius as f32, |acc, func| (func.change_radius)(func.timeout, acc));
 
         let circle_iter =  Circle::new(Coord::new(self.pos.x as i32,
                                                   self.pos.y as i32),
@@ -102,7 +102,7 @@ impl Curve {
     fn update_pos(&mut self) -> bool{
         let speed = self.buffs
                         .iter()
-                        .fold(self.speed, |acc, func| (func.change_speed)(acc));
+                        .fold(self.speed, |acc, func| (func.change_speed)(func.timeout, acc));
         let mut new_x = (self.pos.x + self.direction.x * speed) as f32;
         let mut new_y = (self.pos.y + self.direction.y * speed) as f32;
         let mut new_trace_segment: bool = false;
@@ -148,7 +148,7 @@ impl Curve {
     }
 
     pub fn act(&mut self, input: PlayerInput) {
-        let d = self.buffs.iter().fold(5.0, |acc, func| (func.change_rotation)(acc));
+        let d = self.buffs.iter().fold(5.0, |acc, func| (func.change_rotation)(func.timeout, acc));
         let a = d * (PI) / 180.0;
         let mut new_trace_segment = false;
         match input {

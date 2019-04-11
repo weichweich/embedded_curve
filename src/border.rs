@@ -21,13 +21,7 @@ pub struct Border {
 
 impl Border {
     pub fn new() -> Self {
-        Border {
-            top_left : Coord::new(PAD_LEFT as i32, PAD_TOP as i32),
-            bottom_right : Coord::new((WIDTH-1) as i32 - PAD_RIGHT as i32, 
-                                    (HEIGHT-1) as i32 - PAD_BOTTOM as i32),
-            active : false,
-            drawn : false,
-        }
+        Self::default()
     }
  
     pub fn draw<D: Drawing<GameColor>>(&mut self, display: &mut D){
@@ -44,5 +38,17 @@ impl Border {
                 .into_iter() );
         }
         self.drawn = true;
+    }
+}
+
+impl Default for Border {
+    fn default() -> Self {
+        Self {
+            top_left : Coord::new(PAD_LEFT as i32, PAD_TOP as i32),
+            bottom_right : Coord::new((WIDTH-1) as i32 - PAD_RIGHT as i32, 
+                                    (HEIGHT-1) as i32 - PAD_BOTTOM as i32),
+            active : false,
+            drawn : false,
+        }
     }
 }

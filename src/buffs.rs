@@ -25,9 +25,9 @@ const IMG_SWAP: [u8; 10*10*3] = *include_bytes!("swap.data");
 
 
 pub trait Buff {
-    fn apply_players(&self, players: &mut [Player], collecter_id: usize) {
+    fn apply_players(&self, players: &mut [Player], collector_id: usize) {
         for (j, p) in players.iter_mut().enumerate() {
-            self.apply_player(&mut p.curve, j==collecter_id);
+            self.apply_player(&mut p.curve, j==collector_id);
         }
     }
     fn apply_player(&self, _player: &mut Curve, _collector: bool) {}
@@ -447,7 +447,7 @@ impl SwapBuffSprite {
 }
 
 impl Buff for SwapBuffSprite {
-    fn apply_players(&self, players: &mut [Player], collecter_id: usize) {
+    fn apply_players(&self, players: &mut [Player], _collector_id: usize) {
         let mut players_active: Vec<&mut Player> = players.iter_mut().filter(|p| !p.lost).collect();
         if players_active.len() < 2 { return; }
         let mut acc_curve = Curve::default();

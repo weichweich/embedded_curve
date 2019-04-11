@@ -13,13 +13,10 @@ use crate::display::GameColor;
 use crate::border::Border;
 use crate::buffs::{PlayerBuff, Buff};
 
-
 pub const PAD_LEFT: f32 = 10_f32;
 pub const PAD_RIGHT: f32 = 10_f32;
 pub const PAD_BOTTOM: f32 = 10_f32;
 pub const PAD_TOP: f32 = 10_f32;
-
-
 
 pub trait Collide<T> {
     fn collides_with(&self, incoming: &T) -> bool;
@@ -116,12 +113,12 @@ impl Curve {
             new_x = PAD_LEFT + 1_f32;
             new_trace_segment = true;
         }
-        if new_y < 0.0 {
-            new_y = HEIGHT as f32 - 1_f32;
+        if new_y < PAD_TOP {
+            new_y = HEIGHT as f32 - 1_f32 - PAD_BOTTOM;
             new_trace_segment = true;
-        } else if new_y > HEIGHT as f32 {
+        } else if new_y > (HEIGHT as f32 - PAD_TOP) {
             new_trace_segment = true;
-            new_y = 0.5;
+            new_y = 0.5 + PAD_TOP;
         }
         self.pos = Vector2D{x: new_x, y: new_y};
         new_trace_segment

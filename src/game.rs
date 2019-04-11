@@ -113,7 +113,6 @@ pub enum GameState {
     Finished,
 }
 
-
 pub struct Game {
     pub players: Vec<Player>,
     buffs: Vec<Box<Buff>>,
@@ -202,15 +201,15 @@ impl Game {
             if pi.curve.collides() {
                 if cfg!(debug_assertions) {println!("self collision {}", i);}
                 losers.push(i);
-            } else  { 
-                for (h, pj) in pjs.iter().enumerate() {
-                    if pi.curve.collides_with(&pj.curve) {
-                        if cfg!(debug_assertions) {println!("collision i {}", i);}
-                        losers.push(i);
-                    } else if pj.curve.collides_with(&pi.curve) {
-                        if cfg!(debug_assertions) {println!("collision j {}", h+i+1);}
-                        losers.push(h+i+1);
-                    }
+            }
+            for (h, pj) in pjs.iter().enumerate() {
+                if pi.curve.collides_with(&pj.curve) {
+                    if cfg!(debug_assertions) {println!("collision i {}", i);}
+                    losers.push(i);
+                }
+                if pj.curve.collides_with(&pi.curve) {
+                    if cfg!(debug_assertions) {println!("collision j {}", h+i+1);}
+                    losers.push(h+i+1);
                 }
             }
         }
@@ -254,7 +253,11 @@ impl Game {
             }
         }
         if clear_all {
-            // display.clear();
+            display.draw(Rect::new(Coord::new(PAD_LEFT as i32, PAD_TOP as i32),
+                                   Coord::new((WIDTH as f32 - PAD_RIGHT) as i32, 
+                                              (HEIGHT as f32 - PAD_BOTTOM) as i32))
+                                .with_fill(Some(GameColor{value: 0x00_0000}))
+                                .into_iter());
             for p in &mut self.players {
                 p.clear_trace();
             }

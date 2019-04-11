@@ -17,6 +17,7 @@ const IMG_SMALL: [u8; 10*10*3] = *include_bytes!("smaller.data");
 const IMG_BIG: [u8; 10*10*3] = *include_bytes!("bigger.data");
 const IMG_COLOR: [u8; 10*10*3] = *include_bytes!("color.data");
 const IMG_BORDER: [u8; 10*10*3] = *include_bytes!("border.data");
+const IMG_DRUNK: [u8; 10*10*3] = *include_bytes!("drunk.data");
 
 
 pub trait Buff {
@@ -418,7 +419,7 @@ impl Buff for DrunkenBuffSprite {
     }
 
     fn draw(&self) -> ImgIterator {
-        ImgIterator::new(&IMG_BORDER, 10, self.pos)
+        ImgIterator::new(&IMG_DRUNK, 10, self.pos)
     }
 
     fn aabb(&self) -> (Coord, Coord){

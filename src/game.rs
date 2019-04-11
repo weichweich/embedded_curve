@@ -320,7 +320,7 @@ fn new_rand_buff(rng: &mut Rng) -> Box<Buff + 'static> {
     let pos_buff = rand_pos(rng);
     let pos_coord = Coord::new(pos_buff.0 as i32, pos_buff.1 as i32);
     let rand = get_rand_num(rng);
-    match 8 {
+    match rand % 9 {
         0 => Box::new(FastPlayerBuffSprite::new(pos_coord)),
         1 => Box::new(ClearBuffSprite::new(pos_coord)),
         2 => Box::new(ChangeDirBuffSprite::new(pos_coord)),

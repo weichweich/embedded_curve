@@ -348,6 +348,7 @@ impl Buff for BorderBuff {
 
     fn apply_border(&self, border: &mut Border) {
         border.active = !border.active;
+        border.drawn = false;
     }
 
     fn draw(&self) -> ImgIterator {

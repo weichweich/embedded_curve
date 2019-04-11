@@ -1,4 +1,5 @@
 use crate::player::{Curve};
+use crate::game::Player;
 use crate::display::{
     GameColor
 };
@@ -19,6 +20,11 @@ const IMG_BORDER: [u8; 10*10*3] = *include_bytes!("border.data");
 
 
 pub trait Buff {
+    fn apply_players(&self, players: &mut [Player], collecter_id: usize) {
+        for (j, p) in players.iter_mut().enumerate() {
+            self.apply_player(&mut p.curve, j==collecter_id);
+        }
+    }
     fn apply_player(&self, _player: &mut Curve, _collector: bool) {}
     fn apply_border(&self, _border: &mut Border) {}
     fn clear_screen(&self) -> bool { false }
@@ -425,3 +431,31 @@ impl Buff for DrunkenBuffSprite {
     }
 }
 
+pub struct SwapBuffSprite {
+    pos: Coord,
+}
+
+impl SwapBuffSprite {
+    pub fn new(pos: Coord) -> Self {
+        SwapBuffSprite {pos}
+    }
+}
+
+impl Buff for SwapBuffSprite {
+    fn apply_players(&self, players: &mut [Player], collecter_id: usize) {
+        // for 
+    }
+
+    fn draw(&self) -> ImgIterator {
+        ImgIterator::new(&IMG_BORDER, 10, self.pos)
+    }
+
+    fn aabb(&self) -> (Coord, Coord){
+        let low_right = Coord::new(self.pos[0]+10, self.pos[1]+10);
+        (self.pos, low_right)
+    }
+
+    fn get_pos(&self) -> Coord {
+        self.pos
+    }
+}

@@ -51,7 +51,7 @@ impl InputRegion {
 pub struct Player {
     pub score: u32,
     pub lost: bool,
-    curve: Curve,
+    pub curve: Curve,
     color: GameColor,
     input_left: InputRegion,
     input_right: InputRegion,
@@ -236,6 +236,7 @@ impl Game {
         let mut clear_all = false;
         let mut collected_buffs: Vec<(usize, usize)> = Vec::new();
         for (i, b) in self.buffs.iter_mut().enumerate() {
+
             for (j, p) in self.players.iter().enumerate() {
                 if p.curve.collides_with(b) {
                     collected_buffs.push((i, j));
@@ -251,10 +252,8 @@ impl Game {
             }
         }
         collected_buffs.reverse();
-        for (b_i, p_i) in collected_buffs {
-            for (j, p) in self.players.iter_mut().enumerate() {
-                self.buffs[b_i].apply_player(&mut p.curve, j==p_i);
-            }
+        for (b_i, collecter_id) in collected_buffs {
+            self.buffs[b_i].apply_players(&mut self.players, collecter_id);
             self.buffs.remove(b_i);
         }
         if clear_all {

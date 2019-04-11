@@ -261,6 +261,7 @@ impl Game {
             for p in &mut self.players {
                 p.clear_trace();
             }
+            self.border.drawn = false;
         }
     }
 
@@ -297,7 +298,7 @@ impl Game {
             for p in &mut self.buffs {
                 display.draw(p.draw());
             }
-            for p in &mut self.players {
+            for p in &mut self.players.iter().filter(|p| !p.lost) {
                 p.draw(display);
             }
             self.border.draw(display);

@@ -106,19 +106,20 @@ impl Curve {
         let mut new_x = (self.pos.x + self.direction.x * speed) as f32;
         let mut new_y = (self.pos.y + self.direction.y * speed) as f32;
         let mut new_trace_segment: bool = false;
-        if new_x < PAD_LEFT {
-            new_x = WIDTH as f32 - PAD_RIGHT;
+        let fradius = self.radius as f32;
+        if new_x < PAD_LEFT + fradius {
+            new_x = WIDTH as f32 - PAD_RIGHT - fradius;
             new_trace_segment = true;
-        } else if new_x > (WIDTH as f32 - PAD_RIGHT) {
-            new_x = PAD_LEFT + 1_f32;
+        } else if new_x > (WIDTH as f32 - PAD_RIGHT - fradius) {
+            new_x = PAD_LEFT + fradius + 1_f32;
             new_trace_segment = true;
         }
-        if new_y < PAD_TOP {
-            new_y = HEIGHT as f32 - 1_f32 - PAD_BOTTOM;
+        if new_y < PAD_TOP + fradius {
+            new_y = HEIGHT as f32 - 1_f32 - PAD_BOTTOM - fradius;
             new_trace_segment = true;
-        } else if new_y > (HEIGHT as f32 - PAD_TOP) {
+        } else if new_y > (HEIGHT as f32 - PAD_TOP - fradius) {
+            new_y = 0.5 + PAD_TOP + fradius;
             new_trace_segment = true;
-            new_y = 0.5 + PAD_TOP;
         }
         self.pos = Vector2D{x: new_x, y: new_y};
         new_trace_segment

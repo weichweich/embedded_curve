@@ -38,7 +38,7 @@ impl <'a, F: Framebuffer> Drawing<GameColor> for LcdDisplay<'a, F> {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug, Default)]
 pub struct GameColor {
     pub value: u32,
 }

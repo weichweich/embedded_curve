@@ -41,10 +41,10 @@ struct Segment {
     pub radius: u32,
 }
 
-
+#[derive(Default)]
 pub struct Curve {
     pos: Vector2D,
-    color: GameColor,
+    pub color: GameColor,
     direction: Vector2D,
     radius: u32,
     speed: f32,

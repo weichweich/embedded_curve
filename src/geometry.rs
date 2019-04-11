@@ -5,7 +5,7 @@ use embedded_graphics::prelude::UnsignedCoord;
 use core::ops::{Add, Sub, Mul};
 use libm::{cosf, sinf};
 
-#[derive(Copy,Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct Vector2D {
     pub x: f32,
     pub y: f32,

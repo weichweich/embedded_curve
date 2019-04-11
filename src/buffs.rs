@@ -1,4 +1,5 @@
-use crate::player::{Curve};
+use alloc::vec::Vec;
+use crate::player::Curve;
 use crate::game::Player;
 use crate::display::{
     GameColor
@@ -6,6 +7,7 @@ use crate::display::{
 use embedded_graphics::{
     coord::Coord,
 };
+use core::mem;
 use crate::geometry::ImgIterator;
 use crate::border::Border;
 
@@ -18,6 +20,8 @@ const IMG_BIG: [u8; 10*10*3] = *include_bytes!("bigger.data");
 const IMG_COLOR: [u8; 10*10*3] = *include_bytes!("color.data");
 const IMG_BORDER: [u8; 10*10*3] = *include_bytes!("border.data");
 const IMG_DRUNK: [u8; 10*10*3] = *include_bytes!("drunk.data");
+const IMG_SWAP: [u8; 10*10*3] = *include_bytes!("swap.data");
+
 
 
 pub trait Buff {
@@ -444,11 +448,31 @@ impl SwapBuffSprite {
 
 impl Buff for SwapBuffSprite {
     fn apply_players(&self, players: &mut [Player], collecter_id: usize) {
-        // for 
+        let mut players_active: Vec<&mut Player> = players.iter_mut().filter(|p| !p.lost).collect();
+        if players_active.len() < 2 { return; }
+        let mut acc_curve = Curve::default();
+        
+        let mut curve_colors: Vec<GameColor> = Vec::new();
+        for p in &players_active {
+            curve_colors.push(p.curve.color);
+        }
+
+        for i in 0..players_active.len()-1 {
+            mem::swap(&mut players_active[i+1].curve, &mut acc_curve);
+            mem::swap(&mut players_active[i].curve, &mut acc_curve);
+        }
+
+        let n = players_active.len();
+        if n % 2 == 0 {
+            mem::swap(&mut players_active[n-1].curve, &mut acc_curve);
+        }
+        for (p, c) in players_active.iter_mut().zip(curve_colors) {
+            p.curve.color = c;
+        }
     }
 
     fn draw(&self) -> ImgIterator {
-        ImgIterator::new(&IMG_BORDER, 10, self.pos)
+        ImgIterator::new(&IMG_SWAP, 10, self.pos)
     }
 
     fn aabb(&self) -> (Coord, Coord){

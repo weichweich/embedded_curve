@@ -16,6 +16,7 @@ const IMG_SLOW: [u8; 10*10*3] = *include_bytes!("slow.data");
 const IMG_SMALL: [u8; 10*10*3] = *include_bytes!("smaller.data");
 const IMG_BIG: [u8; 10*10*3] = *include_bytes!("bigger.data");
 const IMG_COLOR: [u8; 10*10*3] = *include_bytes!("color.data");
+const IMG_BORDER: [u8; 10*10*3] = *include_bytes!("border.data");
 
 
 pub trait Buff {
@@ -325,7 +326,7 @@ impl Buff for ColorBuff {
             else if color.value == 0xFF_FF00 { color.value = 0x00_00FF; }
             else if color.value == 0x00_00FF { color.value = 0x00_FF00; }
             else { color.value = 0xFF_FF00; }
-            return color;
+            color
         }
         fn change_rotation(rotation: f32) -> f32 {rotation}
         fn change_speed(speed: f32) -> f32 {speed}
@@ -393,7 +394,7 @@ impl Buff for BorderBuff {
     fn clear_screen(&self) -> bool { false }
 
     fn draw(&self) -> ImgIterator {
-        ImgIterator::new(&IMG_SMALL, 10, self.pos)
+        ImgIterator::new(&IMG_BORDER, 10, self.pos)
     }
 
     fn aabb(&self) -> (Coord, Coord){

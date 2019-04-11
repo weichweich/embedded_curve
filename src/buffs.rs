@@ -392,7 +392,11 @@ impl Buff for DrunkenBuffSprite {
         if !collector {
             fn change_color(_time: u32, color: GameColor) -> GameColor {color}
             fn change_rotation(time: u32, rotation: f32) -> f32 {
-                rotation + 5_f32 - (time as f32 % 10_f32)
+                if time % 100 < 50 {
+                    rotation + 2_f32
+                } else {
+                    rotation - 2_f32
+                }
             }
             fn change_speed(_time: u32, speed: f32) -> f32 {speed}
             fn change_radius(_time: u32, r: f32) -> f32 {r}

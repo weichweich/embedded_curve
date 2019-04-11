@@ -103,8 +103,10 @@ impl Curve {
         let speed = self.buffs
                         .iter()
                         .fold(self.speed, |acc, func| (func.change_speed)(func.timeout, acc));
+
         let mut new_x = (self.pos.x + self.direction.x * speed) as f32;
         let mut new_y = (self.pos.y + self.direction.y * speed) as f32;
+
         let mut new_trace_segment: bool = false;
         let fradius = self.radius as f32;
         if new_x < PAD_LEFT + fradius {
@@ -148,20 +150,23 @@ impl Curve {
     }
 
     pub fn act(&mut self, input: PlayerInput) {
-        let d = self.buffs.iter().fold(5.0, |acc, func| (func.change_rotation)(func.timeout, acc));
-        let a = d * (PI) / 180.0;
         let mut new_trace_segment = false;
+        let mut rotation = self.buffs
+                           .iter()
+                           .fold(0_f32, |acc, func| (func.change_rotation)(func.timeout, acc))
+                           * (PI) / 180.0;
         match input {
             PlayerInput::Left => {
-                self.direction = self.direction.rotate(-a);
+                rotation -= 5_f32 * (PI) / 180.0;
                 new_trace_segment = true;
             },
             PlayerInput::Right => {
-                self.direction = self.direction.rotate(a);
+                rotation += 5_f32 * (PI) / 180.0;
                 new_trace_segment = true;
             },
             _ => {},
         }
+        self.direction = self.direction.rotate(rotation);
         let last_seg = self.trace.last().unwrap();
         new_trace_segment &= (last_seg.start - last_seg.end).length() > 2_f32;
         new_trace_segment |= self.update_pos();
@@ -209,7 +214,8 @@ impl Curve {
             }
         } else if proj_p.distance(self.pos) < (self.radius + seg.radius) as f32 {
             if cfg!(debug_assertions) {
-                println!("collision2 {} {:?} {:?}", proj_p.distance(self.pos), proj_p, seg);}
+                println!("collision2 {} {:?} {:?}", proj_p.distance(self.pos), proj_p, seg);
+            }
             return true;
         }
         false
